@@ -1,0 +1,1 @@
+plot 'res/ville.dat' with lines, 'res/ville-tamp1.dat' with lines, 'res/ville-tamp2.dat' with lines, 'res/ville-tamp3.dat' with lines, 'res/ville-tamp4.dat' with lines, 'res/ville_finale.dat' with lines
