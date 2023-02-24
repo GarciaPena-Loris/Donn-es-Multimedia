@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
     char cNomImgLue[250];
-    int nH, nW, nTaille, tabHistoR[256], tabHistoG[256], tabHistoB[256];
+    int nH, nW, nTaille, *tabHistoR, *tabHistoG, *tabHistoB;
 
     if (argc != 2)
     {
@@ -21,14 +21,12 @@ int main(int argc, char *argv[])
     int nTaille3 = nTaille * 3;
     allocation_tableau(ImgIn, OCTET, nTaille3);
     lire_image_ppm(cNomImgLue, ImgIn, nH * nW);
-    allocation_tableau(ImgOut, OCTET, nTaille3);
 
-    for (int u = 0; u < 256; u++)
-    {
-        tabHistoR[u] = 0;
-        tabHistoG[u] = 0;
-        tabHistoB[u] = 0;
-    }
+    // allocation du tableau
+    allocation_tableau(tabHistoR, int, 256);
+    allocation_tableau(tabHistoG, int, 256);
+    allocation_tableau(tabHistoB, int, 256);
+
     for (int i = 0; i < nTaille3; i += 3)
     {
         tabHistoR[ImgIn[i]]++;
@@ -39,21 +37,13 @@ int main(int argc, char *argv[])
     // affichage
     for (int m = 0; m < 256; m++)
     {
-        if (tabHistoR[m] != 0)
-        {
-            printf("%d pixels rouge de valeur: %d\n", tabHistoR[m], m);
-        }
-        if (tabHistoG[m] != 0)
-        {
-            printf("%d pixels vert de valeur: %d\n", tabHistoG[m], m);
-        }
-        if (tabHistoB[m] != 0)
-        {
-            printf("%d pixels bleu de valeur: %d\n", tabHistoB[m], m);
-        }
-        printf("--------------------------------\n");
+        printf("%i %i %i %i\n", m, tabHistoR[m], tabHistoG[m], tabHistoB[m]);
     }
+
     free(ImgIn);
+    free(tabHistoR);
+    free(tabHistoG);
+    free(tabHistoB);
 
     return 1;
 }
