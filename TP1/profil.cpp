@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
     char cNomImgLue[250], emplacement[10];
-    int nH, nW, nTaille, *tabHisto, indice;
+    int nH, nW, nTaille, indice;
 
     if (argc != 4)
     {
@@ -23,25 +23,21 @@ int main(int argc, char *argv[])
     allocation_tableau(ImgIn, OCTET, nTaille);
     lire_image_pgm(cNomImgLue, ImgIn, nH * nW);
 
-    // allocation du tableau
-    allocation_tableau(tabHisto, int, 256);
-
     if (strcmp(emplacement, "ligne") == 0)
     {
         // recherche par ligne
-        printf("Recherche par ligne \n");
         for (int j = 0; j < nW; j++)
         {
-            tabHisto[ImgIn[indice * nW + j]]++;
+            printf("%d %d\n", j, ImgIn[indice * nW + j]);
+
         }
     }
     else if (strcmp(emplacement, "colonne") == 0)
     {
         // recherche par colonne
-        printf("Recherche par colonne \n");
         for (int i = 0; i < nH; i++)
         {
-            tabHisto[ImgIn[i * nW + indice]]++;
+            printf("%d %d\n", i, ImgIn[i * nW + indice]);
         }
     }
     else
@@ -51,12 +47,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    for (int m = 0; m < 256; m++)
-    {
-        printf("%d %d\n", m, tabHisto[m]);
-    }
-
     free(ImgIn);
-    free(tabHisto);
     return 1;
 }
