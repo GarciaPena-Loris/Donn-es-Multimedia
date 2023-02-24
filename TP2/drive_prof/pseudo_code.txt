@@ -1,0 +1,210 @@
+
+ImgIn, ImgOut, ImgTemporaire : Tableaux de taille W x H
+
+Fonction utiles : 
+func pixel_noir_dans_le_voisinage(image, x, y) :
+	Pour dx allant de -1 à 1:
+		Pour dy allant de -1 à 1:
+			Si image[x + dx, y + dy] == 0:
+				Retourner vrai 
+	Retourner faux (aucun pixel noir trouvé)
+	
+func pixel_blanc_dans_le_voisinage(image, x, y) :
+	Pour dx allant de -1 à 1:
+		Pour dy allant de -1 à 1:
+			Si image[x + dx, y + dy] == 255:
+				Retourner vrai 
+	Retourner faux (aucun pixel blanc trouvé)
+
+Erosion :
+Pour i allant de 1 à W-1:
+	Pour j allant de 1 à H-1:
+		Si pixel_noir_dans_le_voisinage(ImgIn, i, j) == vrai :
+			ImgOut[i, j] = 0
+		Sinon :
+			ImgOut[i, j] = 255
+
+Dilatation :
+Pour i allant de 1 à W-1:
+	Pour j allant de 1 à H-1:
+		Si pixel_blanc_dans_le_voisinage(ImgIn, i, j) == vrai :
+			ImgOut[i, j] = 255
+		Sinon :
+			ImgOut[i, j] = 0
+			
+			
+Fermeture:
+dilater ImgIn dans ImgTemporaire
+eroder ImgTemporaire dans ImgOut
+			
+Ouverture:
+eroder ImgIn dans ImgTemporaire
+dilater ImgTemporaire dans ImgOut
+
+Segmentation:
+dilater ImgIn dans ImgTemporaire
+Pour i allant de 0 à W:
+	Pour j allant de 0 à H:
+		Si ImgIn[i, j] != ImgTemporaire[i, j]:
+			ImgOut[i, j] = 0
+		Sinon :
+			ImgOut[i, j] = 255
+			
+
+
+
+Partie en niveau de gris:			
+
+Fonction utiles : 
+func pixel_minimum_dans_le_voisinage(image, x, y) :
+	mini = 255
+	Pour dx allant de -1 à 1:
+		Pour dy allant de -1 à 1:
+			Si image[x + dx, y + dy] < mini:
+				mini = image[x + dx, y + dy]
+	Retourner mini
+	
+func pixel_maximum_dans_le_voisinage(image, x, y) :
+	maxi = 0
+	Pour dx allant de -1 à 1:
+		Pour dy allant de -1 à 1:
+			Si image[x + dx, y + dy] > maxi:
+				maxi = image[x + dx, y + dy]
+	Retourner maxi
+
+Erosion :
+Pour i allant de 1 à W-1:
+	Pour j allant de 1 à H-1:
+		ImgOut[i, j] = pixel_minimum_dans_le_voisinage(ImgIn, i, j)
+
+Dilatation :
+Pour i allant de 1 à W-1:
+	Pour j allant de 1 à H-1:
+		ImgOut[i, j] = pixel_maximum_dans_le_voisinage(ImgIn, i, j)
+		
+		
+
+Gestion des bordures:			
+
+Fonction utiles : 
+func pixel_minimum_dans_le_voisinage(image, x, y) :
+	mini = 255
+	Pour dx allant de -1 à 1:
+		Pour dy allant de -1 à 1:
+			Si (x+dx) >= 0 et (x+dx) < largeurImage et (y+dy) >= 0 et (y+dy) < hauteurImage: 
+				Si image[x + dx, y + dy] < mini:
+					mini = image[x + dx, y + dy]
+	Retourner mini
+	
+func pixel_maximum_dans_le_voisinage(image, x, y) :
+	maxi = 0
+	Pour dx allant de -1 à 1:
+		Pour dy allant de -1 à 1:
+			Si (x+dx) >= 0 et (x+dx) < largeurImage et (y+dy) >= 0 et (y+dy) < hauteurImage: 
+				Si image[x + dx, y + dy] > maxi:
+					maxi = image[x + dx, y + dy]
+	Retourner maxi
+
+Erosion :
+Pour i allant de 0 à W:
+	Pour j allant de 1 à H:
+		ImgOut[i, j] = pixel_minimum_dans_le_voisinage(ImgIn, i, j)
+
+Dilatation :
+Pour i allant de 0 à W:
+	Pour j allant de 1 à H:
+		ImgOut[i, j] = pixel_maximum_dans_le_voisinage(ImgIn, i, j)
+		
+		
+		
+
+Recherche dans le voisinage avec un masque:			
+
+Fonction utiles : 
+func pixel_minimum_dans_le_voisinage(image, x, y, masque : tableau binaire (0 ou 1) de taille M x M) :
+	mini = 255
+	Pour dx allant de -M/2 à M/2:
+		Pour dy allant de -M/2 à M/2:
+			Si masque[(M/2)+dx, (M/2)+dy] == 0:
+				continuer
+			Si (x+dx) >= 0 et (x+dx) < largeurImage et (y+dy) >= 0 et (y+dy) < hauteurImage: 
+				Si image[x + dx, y + dy] < mini:
+					mini = image[x + dx, y + dy]
+	Retourner mini
+	
+func pixel_maximum_dans_le_voisinage(image, x, y, masque : tableau binaire (0 ou 1) de taille M x M) :
+	maxi = 0
+	Pour dx allant de -M/2 à M/2:
+		Pour dy allant de -M/2 à M/2:
+			Si masque[(M/2)+dx, (M/2)+dy] == 0:
+				continuer
+			Si (x+dx) >= 0 et (x+dx) < largeurImage et (y+dy) >= 0 et (y+dy) < hauteurImage: 
+				Si image[x + dx, y + dy] > maxi:
+					maxi = image[x + dx, y + dy]
+	Retourner maxi
+
+Example de masque :
+[ 0 0 0 1 1 1 0 0 0 ,
+  0 0 1 1 1 1 1 0 0 ,
+  0 1 1 1 1 1 1 1 0 ,
+  1 1 1 1 1 1 1 1 1 ,
+  0 1 1 1 1 1 1 1 0 ,
+  0 0 1 1 1 1 1 0 0 ,
+  0 0 0 1 1 1 0 0 0 ]
+ou encore 
+[ 0 0 1 0 0 0 0 0 1 ,
+  1 1 1 1 1 0 0 0 1 ,
+  0 1 1 1 1 1 1 1 1 ,
+  0 0 1 1 1 1 1 0 1 ,
+  0 1 1 1 1 1 0 0 0 ,
+  1 1 1 1 1 0 0 0 1 ,
+  0 0 1 0 0 0 0 0 1 ]
+  
+Erosion :
+Pour i allant de 0 à W:
+	Pour j allant de 1 à H:
+		ImgOut[i, j] = pixel_minimum_dans_le_voisinage(ImgIn, i, j, masque)
+
+Dilatation :
+Pour i allant de 0 à W:
+	Pour j allant de 1 à H:
+		ImgOut[i, j] = pixel_maximum_dans_le_voisinage(ImgIn, i, j, masque)
+		
+		
+Flous à l'aide de convolutions :
+
+
+Fonction utiles : 
+func convolution(image, x, y, masque : tableau de flottants de taille M x M) :
+	somme = 0
+	diviseur = 0
+	Pour dx allant de -M/2 à M/2:
+		Pour dy allant de -M/2 à M/2:
+			Si (x+dx) >= 0 et (x+dx) < largeurImage et (y+dy) >= 0 et (y+dy) < hauteurImage: 
+				somme += image[x + dx, y + dy]
+				diviseur += masque[dx + M/2, dy + M/2]
+	Retourner somme / diviseur
+
+Example de convolution :
+[ 1 1 1 ,
+  1 1 1 ,
+  1 1 1 ]
+ou encore 
+[ 0 1 0 ,
+  1 1 1 ,
+  0 1 0 ]
+ou encore :
+[ 0.0, 0.2, 0.5, 0.2, 0.0 ,
+  0.2, 0.4, 0.7, 0.4, 0.2 ,
+  0.5, 0.7, 0.9, 0.7, 0.5 ,
+  0.2, 0.4, 0.7, 0.4, 0.2 ,
+  0.0, 0.2, 0.5, 0.2, 0.0 ,
+  ]
+  
+Flou :
+Pour i allant de 0 à W:
+	Pour j allant de 1 à H:
+		ImgOut[i, j] = convolution(ImgIn, i, j, masque)
+
+		
+		

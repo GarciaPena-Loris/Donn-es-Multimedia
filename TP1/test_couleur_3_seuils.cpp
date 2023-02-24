@@ -42,5 +42,6 @@ int main(int argc, char* argv[])
 
    ecrire_image_ppm(cNomImgEcrite, ImgOut,  nH, nW);
    free(ImgIn);
+   free(ImgOut);
    return 1;
 }

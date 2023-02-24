@@ -1,5 +1,3 @@
-// test_couleur.cpp : Seuille une image en niveau de gris
-
 #include <stdio.h>
 #include "image_ppm.h"
 
@@ -37,6 +35,7 @@ int main(int argc, char *argv[])
     }
 
   ecrire_image_pgm(cNomImgEcrite, ImgOut, nH, nW);
+  
   free(ImgIn);
   free(ImgOut);
 
