@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// Filename        : image_ppm.c
+// Filename        : image_ppm.h
 // Description     :
 // Created On      : Tue Mar 31 13:26:36 2005
 // ----------------------------------------------------------------------------
@@ -19,7 +19,7 @@ if( (nom = (type*) calloc (nombre, sizeof(type) ) ) == NULL ) \
 typedef unsigned char OCTET;
 
 /*===========================================================================*/
-void ignorer_commentaires(FILE * f)
+inline void ignorer_commentaires(FILE * f)
 {
   unsigned char c;
   while((c=fgetc(f)) == '#')
@@ -30,7 +30,7 @@ void ignorer_commentaires(FILE * f)
 
 
 /*===========================================================================*/
-void ecrire_image_ppm(char  nom_image[], OCTET *pt_image, int nb_lignes, int nb_colonnes)
+inline void ecrire_image_ppm(char  nom_image[], OCTET *pt_image, int nb_lignes, int nb_colonnes)
 {
    FILE *f_image;
    int taille_image = 3*nb_colonnes * nb_lignes;
@@ -56,8 +56,8 @@ void ecrire_image_ppm(char  nom_image[], OCTET *pt_image, int nb_lignes, int nb_
 }
 /*===========================================================================*/
 
-/*===========================================================================*/		
-void lire_nb_lignes_colonnes_image_ppm(char nom_image[], int *nb_lignes, int *nb_colonnes)
+/*===========================================================================*/
+inline void lire_nb_lignes_colonnes_image_ppm(char nom_image[], int *nb_lignes, int *nb_colonnes)
 {
    FILE *f_image;
    int max_grey_val;
@@ -82,7 +82,7 @@ void lire_nb_lignes_colonnes_image_ppm(char nom_image[], int *nb_lignes, int *nb
 }
 /*===========================================================================*/
 /*===========================================================================*/
-void lire_image_ppm(char  nom_image[], OCTET *pt_image, int taille_image)
+inline void lire_image_ppm(char  nom_image[], OCTET *pt_image, int taille_image)
 {
    FILE *f_image;
    int  nb_colonnes, nb_lignes, max_grey_val;
@@ -113,37 +113,37 @@ void lire_image_ppm(char  nom_image[], OCTET *pt_image, int taille_image)
 /*===========================================================================*/
 /*===========================================================================*/
 
-void planR(OCTET *pt_image, OCTET *src, int taille_image){
+inline void planR(OCTET *pt_image, OCTET *src, int taille_image){
    int i;
    for (i=0; i<taille_image; i++){
       pt_image[i]=src[3*i];
       }
    }
-   
+
 /*===========================================================================*/
 /*===========================================================================*/
 
-void planV(OCTET *pt_image, OCTET *src, int taille_image){
+inline void planV(OCTET *pt_image, OCTET *src, int taille_image){
    int i;
    for (i=0; i<taille_image; i++){
       pt_image[i]=src[3*i+1];
       }
-   }   
+   }
 
 /*===========================================================================*/
 /*===========================================================================*/
 
-void planB(OCTET *pt_image, OCTET *src, int taille_image){
+inline void planB(OCTET *pt_image, OCTET *src, int taille_image){
    int i;
    for (i=0; i<taille_image; i++){
       pt_image[i]=src[3*i+2];
       }
    }
-   
-/*===========================================================================*/   
+
+/*===========================================================================*/
 /*===========================================================================*/
 
-void ecrire_image_pgm(char  nom_image[], OCTET *pt_image, int nb_lignes, int nb_colonnes)
+inline void ecrire_image_pgm(char  nom_image[], OCTET *pt_image, int nb_lignes, int nb_colonnes)
 {
    FILE *f_image;
    int taille_image = nb_colonnes * nb_lignes;
@@ -167,9 +167,10 @@ void ecrire_image_pgm(char  nom_image[], OCTET *pt_image, int nb_lignes, int nb_
 	 fclose(f_image);
       }
 }
+
 /*===========================================================================*/
 
-void lire_nb_lignes_colonnes_image_pgm(char nom_image[], int *nb_lignes, int *nb_colonnes)
+inline void lire_nb_lignes_colonnes_image_pgm(char nom_image[], int *nb_lignes, int *nb_colonnes)
 {
    FILE *f_image;
    int max_grey_val;
@@ -194,7 +195,7 @@ void lire_nb_lignes_colonnes_image_pgm(char nom_image[], int *nb_lignes, int *nb
 }
 /*===========================================================================*/
 /*===========================================================================*/
-void lire_image_pgm(char  nom_image[], OCTET *pt_image, int taille_image)
+inline void lire_image_pgm(char  nom_image[], OCTET *pt_image, int taille_image)
 {
    FILE *f_image;
    int  nb_colonnes, nb_lignes, max_grey_val;
@@ -221,3 +222,4 @@ void lire_image_pgm(char  nom_image[], OCTET *pt_image, int taille_image)
       }
 }
 /*===========================================================================*/
+
