@@ -1,4 +1,4 @@
-// erosion.cpp :
+// difference.cpp :
 
 #include <stdio.h>
 #include "image_ppm.h"
@@ -33,15 +33,15 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // image 1
+    // in 1
     allocation_tableau(ImgIn1, OCTET, nTaille1);
     lire_image_pgm(cNomImgLue1, ImgIn1, nH1 * nW1);
 
-    // image 2
+    // in 2
     allocation_tableau(ImgIn2, OCTET, nTaille2);
     lire_image_pgm(cNomImgLue2, ImgIn2, nH2 * nW2);
 
-    //out
+    // out
     allocation_tableau(ImgOut, OCTET, nTaille2);
 
 
@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
         }
 
     ecrire_image_pgm(cNomImgEcrite, ImgOut, nH1, nW1);
+    
     free(ImgIn1);
     free(ImgIn2);
     free(ImgOut);

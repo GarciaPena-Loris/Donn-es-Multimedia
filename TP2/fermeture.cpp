@@ -1,4 +1,4 @@
-// fermeture.cpp :
+// fermture.cpp :
 
 #include <stdio.h>
 #include "image_ppm.h"
@@ -17,44 +17,56 @@ int main(int argc, char *argv[])
     sscanf(argv[1], "%s", cNomImgLue);
     sscanf(argv[2], "%s", cNomImgEcrite);
 
-    OCTET *ImgIn, *ImgOut, *ImgTamp;
+    OCTET *ImgIn,  *ImgTamp, *ImgOut;
 
     lire_nb_lignes_colonnes_image_pgm(cNomImgLue, &nH, &nW);
     nTaille = nH * nW;
 
     allocation_tableau(ImgIn, OCTET, nTaille);
     lire_image_pgm(cNomImgLue, ImgIn, nH * nW);
+
     allocation_tableau(ImgTamp, OCTET, nTaille);
     allocation_tableau(ImgOut, OCTET, nTaille);
 
-    for (int i = 0; i < nH; i++)
-        for (int j = 0; j < nW; j++)
+    // dilatation
+    for (int y = 0; y < nH; y++)
+    {
+        for (int x = 0; x < nW; x++)
         {
-            if (ImgIn[i * nW + j] == 0 || ImgIn[(i - 1) * nW + j] == 0 || ImgIn[(i + 1) * nW + j] == 0 || ImgIn[i * nW + (j - 1)] == 0 || ImgIn[i * nW + (j + 1)] == 0)
+            if (pixelNoirVoisinage(ImgIn, x, y, nW, nH) == 1)
             {
-                ImgTamp[i * nW + j] = 0;
+                // la valeur du pixel de sortie à 0
+                ImgTamp[indicePixel(x, y, nW)] = 0;
             }
             else
             {
-                ImgTamp[i * nW + j] = 255;
+                // la valeur du pixel de sortie à 255
+                ImgTamp[indicePixel(x, y, nW)] = 255;
             }
         }
+    }
 
-    for (int i = 0; i < nH; i++)
-        for (int j = 0; j < nW; j++)
+    // erosion
+    for (int y = 0; y < nH; y++)
+    {
+        for (int x = 0; x < nW; x++)
         {
-            if (ImgTamp[i * nW + j] == 255 || ImgTamp[(i - 1) * nW + j] == 255 || ImgTamp[(i + 1) * nW + j] == 255 || ImgTamp[i * nW + (j - 1)] == 255 || ImgTamp[i * nW + (j + 1)] == 255)
+            if (pixelBlancVoisinage(ImgTamp, x, y, nW, nH) == 1)
             {
-                ImgOut[i * nW + j] = 255;
+                // la valeur du pixel de sortie à 255
+                ImgOut[indicePixel(x, y, nW)] = 255;
             }
             else
             {
-                ImgOut[i * nW + j] = 0;
+                // la valeur du pixel de sortie à 0
+                ImgOut[indicePixel(x, y, nW)] = 0;
             }
         }
+    }
 
     ecrire_image_pgm(cNomImgEcrite, ImgOut, nH, nW);
     free(ImgIn);
+    free(ImgTamp);
     free(ImgOut);
 
     return 1;
