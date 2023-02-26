@@ -1,0 +1,28 @@
+// histogramme :
+set xlabel "Intensité"
+set ylabel "Nombre de pixels"
+set title "Histogramme poivron coul / poivron coul flou"
+
+// profil :
+set xlabel "Position"
+set ylabel "Valeur"
+set title "Profil poivron coul ligne 150"
+
+
+// comparaison profil des poivron flou colonne 135
+plot "res/poivron-profil.dat" with lines lt rgb "#01fe4c" title "poivron original", "res/poivron-flou-mult1-profil.dat" with lines lt rgb "#69ff01" title "poivron flou 1", "res/poivron-flou-mult2-profil.dat" with lines lt rgb "#fcfe00" title "poivron flou 2", "res/poivron-flou-mult3-profil.dat" with lines lt rgb "#feab01" title "poivron flou 3", "res/poivron-flou-mult4-profil.dat" with lines lt rgb "#ff6b02" title "poivron flou 4", "res/poivron-flou-final-profil.dat" with lines lt rgb "#ff0101" title "poivron flou final"
+
+// comparaison histo poivron flou
+plot "res/poivron-histo.dat" with lines lt rgb "#01fe4c" title "poivron original", "res/poivron-flou-mult1-histo.dat" with lines lt rgb "#69ff01" title "poivron flou 1", "res/poivron-flou-mult2-histo.dat" with lines lt rgb "#fcfe00" title "poivron flou 2", "res/poivron-flou-final-histo.dat" with lines lt rgb "red" title "poivron flou final" 
+
+// comparaison histo poivron coul / poivron coul flou //inutile
+plot "res/poivron-coul-histo.dat" with lines lt rgb "green" title "poivron coul original", "res/poivron-flou-coul-histo.dat" with lines lt rgb "red" title "poivron flou coul"
+
+
+// comparaison histo poivron coul / poivron coul flou pour chaque RGB
+plot "res/poivron-coul-histo.dat" using 1:2 with lines lt rgb "red" title "poivron coul original R", \
+"res/poivron-coul-histo.dat" using 1:3 with lines lt rgb "green" title "poivron coul original G", \
+"res/poivron-coul-histo.dat" using 1:4 with lines lt rgb "blue" title "poivron coul original B", \
+"res/poivron-flou-coul-histo.dat" using 1:2 with lines lt rgb "#ff00ff" title "poivron flou coul R", \
+"res/poivron-flou-coul-histo.dat" using 1:3 with lines lt rgb "#ffff00" title "poivron flou coul G", \
+"res/poivron-flou-coul-histo.dat" using 1:4 with lines lt rgb "#00ffff" title "poivron flou coul B"
