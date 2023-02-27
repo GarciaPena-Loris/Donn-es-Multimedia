@@ -9,8 +9,8 @@ set ylabel "Valeur"
 set title "Profil poivron coul ligne 150"
 
 
-// comparaison profil des poivron flou colonne 135
-plot "res/poivron-profil.dat" with lines lt rgb "#01fe4c" title "poivron original", "res/poivron-flou-mult1-profil.dat" with lines lt rgb "#69ff01" title "poivron flou 1", "res/poivron-flou-mult2-profil.dat" with lines lt rgb "#fcfe00" title "poivron flou 2", "res/poivron-flou-mult3-profil.dat" with lines lt rgb "#feab01" title "poivron flou 3", "res/poivron-flou-mult4-profil.dat" with lines lt rgb "#ff6b02" title "poivron flou 4", "res/poivron-flou-final-profil.dat" with lines lt rgb "#ff0101" title "poivron flou final"
+// comparaison profil ville et ville norme ligne 230
+plot "res/ville-profil.dat" with lines lt rgb "green" title "ville original", "res/ville-grad-nm-profil.dat" with lines lt rgb "red" title "ville norme"
 
 // comparaison histo poivron flou
 plot "res/poivron-histo.dat" with lines lt rgb "#01fe4c" title "poivron original", "res/poivron-flou-mult1-histo.dat" with lines lt rgb "#69ff01" title "poivron flou 1", "res/poivron-flou-mult2-histo.dat" with lines lt rgb "#fcfe00" title "poivron flou 2", "res/poivron-flou-final-histo.dat" with lines lt rgb "red" title "poivron flou final" 
