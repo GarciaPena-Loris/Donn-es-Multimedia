@@ -2,9 +2,9 @@
 #include "image_ppm.h"
 
 int main(int argc, char **argv) {
-    // Gestion des arguments : on veut une image d'entrée et une image de sortie.
+    // Gestion des arguments : on veut une image d'entrée et un nom de sortie.
     if (argc != 3) {
-        printf("Usage: ImageIn.ppm ImageOut.ppm \n"); 
+        printf("Usage: ImageIn.ppm ImageOut \n"); 
         exit (1) ;
     }
     

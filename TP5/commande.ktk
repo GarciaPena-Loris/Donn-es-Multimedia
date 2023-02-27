@@ -1,0 +1,14 @@
+// générér image RGB from YCbCR
+.\YCbCr ..\newImages\Monarch_Y.pgm ..\newImages\Monarch_Cb.pgm ..\newImages\Monarch_Cr.pgm ..\newImages\MonarchMonarch_A.pgm
+
+plot 'res/histo-monarch-modif-Y.dat' with lines title "Monarch modif Y", 'res/histo-monarch.dat' with lines title "Monarch original"
+
+// histogramme :
+set xlabel "Intensité"
+set ylabel "Nombre de pixels"
+set title "Histogramme Monarch / Monarch modif Y"
+
+// profil :
+set xlabel "Position"
+set ylabel "Valeur"
+set title "Profil poivron coul ligne 150"
