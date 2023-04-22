@@ -86,9 +86,6 @@ void main (void) {
     // Ajouter un bord noir a la forme en affichant une couleur noir lorque le produit scalaire entre la normal N est la
     // direction de vue V est inferieur a un seuil (example 0.3).
 
-    if (dot(N, V) < 3.f ) {
-        gl_FragColor = vec4 (0.0, 0.0, 0.0, 1.0);
-    }
     gl_FragColor = vec4 (I.xyz, 1);
 
 }
