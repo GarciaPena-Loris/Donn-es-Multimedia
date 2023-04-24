@@ -30,6 +30,10 @@
 
 int valfX = 10;
 int valfY = 10;
+float valfR = 0.7;
+float valfr = 0.3;
+float valRadius = 0.5;
+float valHeight = 1;
 
 enum DisplayMode
 {
@@ -83,11 +87,21 @@ Mesh mesh;
 // Mesh to generate
 Mesh unit_sphere;
 Mesh unit_cube;
+Mesh unit_torus;
+Mesh unit_cylinder;
+Mesh unit_cone;
+Mesh unit_cylinder_cone;
+Mesh unit_supershape;
 
 bool display_normals;
 bool display_loaded_mesh;
 bool display_unit_sphere;
 bool display_unit_cube;
+bool display_unit_torus;
+bool display_unit_cylinder;
+bool display_unit_cone;
+bool display_unit_cylinder_cone;
+bool display_unit_supershape;
 DisplayMode displayMode;
 
 // -------------------------------------------
@@ -293,6 +307,124 @@ void setUnitCube(Mesh &o_mesh, int nX, int nY)
     }
 }
 
+void smooth(Mesh &o_mesh)
+{
+    std::vector<Vec3> new_vertices(o_mesh.vertices.size());
+
+    // Pour chaque vertex, calcule la moyenne des positions de ses voisins
+    for (unsigned int i = 0; i < o_mesh.vertices.size(); i++)
+    {
+        Vec3 sum(0, 0, 0);
+        int count = 0;
+        for (Triangle &tri : o_mesh.triangles)
+        {
+            if (tri[0] == i || tri[1] == i || tri[2] == i)
+            {
+                sum += o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]];
+                count += 3;
+            }
+        }
+        new_vertices[i] = sum / count;
+    }
+
+    // Met à jour les positions des vertices dans le mesh
+    o_mesh.vertices = new_vertices;
+}
+
+void setUnitTorus(Mesh &o_mesh, float R, float r, int nX, int nY)
+{
+    o_mesh.vertices.clear();
+    o_mesh.normals.clear();
+    o_mesh.triangles.clear();
+
+    // Vertices
+    for (int i = 0; i <= nX; i++)
+    {
+        float u = 2 * M_PI * i / nX;
+        for (int j = 0; j <= nY; j++)
+        {
+            float v = 2 * M_PI * j / nY;
+            float x = (R + r * cos(v)) * cos(u);
+            float y = (R + r * cos(v)) * sin(u);
+            float z = r * sin(v);
+            o_mesh.vertices.push_back(Vec3(x, y, z));
+        }
+    }
+
+    // Triangles
+    for (int i = 0; i < nX; i++)
+    {
+        int index = i * (nY + 1);
+        for (int j = 0; j < nY; j++)
+        {
+            int a = index + j;
+            int b = a + 1;
+            int c = a + (nY + 1);
+            int d = c + 1;
+            o_mesh.triangles.push_back(Triangle(a, c, b));
+            o_mesh.triangles.push_back(Triangle(b, c, d));
+        }
+    }
+
+    // Normales
+    for (const Vec3 v : o_mesh.vertices)
+    {
+        o_mesh.normals.push_back(v / 1);
+    }
+}
+
+void setUnitCylinder(Mesh &o_mesh, float radius, float height, int nX, int nY)
+{
+    o_mesh.vertices.clear();
+    o_mesh.normals.clear();
+    o_mesh.triangles.clear();
+
+    // Calcul de la distance entre deux points horizontaux
+    float angle = 2 * M_PI / nX;
+
+    // Vertices
+    // Point milieu haut
+    const Vec3 poleNord = Vec3(0, -height / 2, 0);
+    o_mesh.vertices.push_back(poleNord);
+
+    // Points cotés
+    for (int i = 0; i <= nX; i++)
+    {
+        float x = radius * cos(angle * i);
+        float z = radius * sin(angle * i);
+        for (int j = 0; j <= nY; j++)
+        {
+            float y = height * j / nY - height / 2;
+            o_mesh.vertices.push_back(Vec3(x, y, z));
+        }
+    }
+
+    // Point milieu bas
+    const Vec3 poleSud = Vec3(0, height / 2, 0);
+    o_mesh.vertices.push_back(poleSud);
+
+    // Triangles
+    for (int i = 0; i < nX ; i++)
+    {
+        for (int j = 0; j < nY; j++)
+        {
+            int a = i * (nY + 1) + j;
+            int b = a + 1;
+            int c = a + (nY + 1);
+            int d = c + 1;
+            o_mesh.triangles.push_back(Triangle(a, b, c));
+            o_mesh.triangles.push_back(Triangle(b, d, c));
+        }
+    }
+    
+
+    // Normales
+    for (const Vec3 v : o_mesh.vertices)
+    {
+        o_mesh.normals.push_back(v / 1);
+    }
+}
+
 bool saveOFF(const std::string &filename,
              std::vector<Vec3> &i_vertices,
              std::vector<Vec3> &i_normals,
@@ -437,6 +569,11 @@ void init()
     display_normals = false;
     display_unit_sphere = false;
     display_unit_cube = false;
+    display_unit_torus = false;
+    display_unit_cylinder = false;
+    display_unit_cone = false;
+    display_unit_cylinder_cone = false;
+    display_unit_supershape = false;
     display_loaded_mesh = true;
 
     glLineWidth(1.);
@@ -557,19 +694,49 @@ void draw()
 
     if (display_unit_sphere)
     {
-        glColor3f(0.8, 1, 0.8);
+        glColor3f(0.6, 1, 0.5);
         drawTriangleMesh(unit_sphere);
     }
 
     if (display_unit_cube)
     {
-        glColor3f(1.0, 0.7, 0.7);
+        glColor3f(1.0, 0.1, 0.1);
         drawTriangleMesh(unit_cube);
+    }
+
+    if (display_unit_torus)
+    {
+        glColor3f(0.4, 0.4, 1.0);
+        drawTriangleMesh(unit_torus);
+    }
+
+    if (display_unit_cylinder)
+    {
+        glColor3f(0.7, 0.0, 1.0);
+        drawTriangleMesh(unit_cylinder);
+    }
+
+    if (display_unit_cone)
+    {
+        glColor3f(0.7, 0.0, 1.0);
+        drawTriangleMesh(unit_cone);
+    }
+
+    if (display_unit_cylinder_cone)
+    {
+        glColor3f(0.7, 0.0, 1.0);
+        drawTriangleMesh(unit_cylinder_cone);
+    }
+
+    if (display_unit_supershape)
+    {
+        glColor3f(0.7, 0.0, 1.0);
+        drawTriangleMesh(unit_supershape);
     }
 
     if (display_loaded_mesh)
     {
-        glColor3f(0.8, 0.8, 1);
+        glColor3f(0.8, 0.8, 0.9);
         drawTriangleMesh(mesh);
     }
 
@@ -585,7 +752,16 @@ void draw()
             drawTriangleMesh(unit_sphere);
         if (display_unit_cube)
             drawTriangleMesh(unit_cube);
-
+        if (display_unit_torus)
+            drawTriangleMesh(unit_torus);
+        if (display_unit_cylinder)
+            drawTriangleMesh(unit_cylinder);
+        if (display_unit_cone)
+            drawTriangleMesh(unit_cone);
+        if (display_unit_cylinder_cone)
+            drawTriangleMesh(unit_cylinder_cone);
+        if (display_unit_supershape)
+            drawTriangleMesh(unit_supershape);
         if (display_loaded_mesh)
             drawTriangleMesh(mesh);
 
@@ -645,6 +821,9 @@ void key(unsigned char keyPressed, int x, int y)
     case 'n': // Press n key to display normals
         display_normals = !display_normals;
         break;
+    case 's': // Press n key to smooth the vertices
+        smooth(unit_cube);
+        break;
 
     case '1': // Toggle loaded mesh display
         display_loaded_mesh = !display_loaded_mesh;
@@ -653,16 +832,75 @@ void key(unsigned char keyPressed, int x, int y)
     case '2': // Toggle unit sphere mesh display
         display_unit_sphere = !display_unit_sphere;
         break;
-    case '3': // Toggle unit sphere mesh display
+    case '3': // Toggle unit cube mesh display
         display_unit_cube = !display_unit_cube;
+        break;
+    case '4': // Toggle unit torus mesh display
+        display_unit_torus = !display_unit_torus;
+        break;
+    case '5': // Toggle unit cylinder mesh display
+        display_unit_cylinder = !display_unit_cylinder;
+        break;
+    case '6': // Toggle unit cone mesh display
+        display_unit_cone = !display_unit_cone;
+        break;
+    case '7': // Toggle unit cylinder cone mesh display
+        display_unit_cylinder_cone = !display_unit_cylinder_cone;
+        break;
+    case '8': // Toggle unit supershape mesh display
+        display_unit_supershape = !display_unit_supershape;
         break;
     case '-':
         setUnitSphere(unit_sphere, --valfX, --valfY);
         setUnitCube(unit_cube, --valfX, --valfY);
+        setUnitTorus(unit_torus, valfR, valfr, --valfX, --valfY);
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, --valfX, --valfY);
+        // setUnitCone(unit_cone, valfR, valfr, --valfX, --valfY);
+        // setUnitCylinderCone(unit_cylinder_cone, valfR, valfr, --valfX, --valfY);
+        // setUnitSupershape(unit_supershape, valfR, valfr, --valfX, --valfY);
         break;
     case '+':
         setUnitSphere(unit_sphere, ++valfX, ++valfY);
         setUnitCube(unit_cube, ++valfX, ++valfY);
+        setUnitTorus(unit_torus, valfR, valfr, ++valfX, ++valfY);
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, ++valfX, ++valfY);
+        // setUnitCone(unit_cone, valfR, valfr, ++valfX, ++valfY);
+        // setUnitCylinderCone(unit_cylinder_cone, valfR, valfr, ++valfX, ++valfY);
+        // setUnitSupershape(unit_supershape, valfR, valfr, ++valfX, ++valfY);
+        break;
+    // Torus
+    case 'r':
+        valfr += 0.1;
+        setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
+        break;
+    case 't':
+        valfr -= 0.1;
+        setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
+        break;
+    case 'R':
+        valfR += 0.1;
+        setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
+        break;
+    case 'T':
+        valfR -= 0.1;
+        setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
+        break;
+    // Cylinder
+    case 'h':
+        valHeight += 0.1;
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        break;
+    case 'H':
+        valHeight -= 0.1;
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        break;
+    case 'y':
+        valRadius += 0.1;
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        break;
+    case 'Y':
+        valRadius -= 0.1;
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
         break;
     default:
         break;
@@ -761,6 +999,11 @@ int main(int argc, char **argv)
 
     setUnitSphere(unit_sphere, valfX, valfY);
     setUnitCube(unit_cube, valfX, valfY);
+    setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
+    setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+    // setUnitCone(unit_cone, valfR, valfr, valfX, valfY);
+    // setUnitCylinderCone(unit_cylinder_cone, valfR, valfr, valfX, valfY);
+    // setUnitSupershape(unit_supershape, valfR, valfr, valfX, valfY);
 
     glutMainLoop(); // Le programme se lance et appelle en boucle les fonctions au dessus
     return EXIT_SUCCESS;
