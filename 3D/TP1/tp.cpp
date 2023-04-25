@@ -14,6 +14,7 @@
 // purpose.
 // -------------------------------------------
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -34,6 +35,12 @@ float valfR = 0.7;
 float valfr = 0.3;
 float valRadius = 0.5;
 float valHeight = 1;
+float valm = 6.0;
+float vala = 1.0; // Supershape
+float valb = 1.0; // Supershape
+float valn1 = 1.0; // Supershape
+float valn2 = 1.0; // Supershape
+float valn3 = 1.0; // Supershape
 
 enum DisplayMode
 {
@@ -121,97 +128,46 @@ static bool fullScreen = false;
 // To complete
 void setUnitSphere(Mesh &o_mesh, int nX, int nY)
 {
-    /*
-    Creer des sommets discretisant la sphere avec un nombre nX de meridiens et nY de paralleles.
-    Indications : un point 3D sur la sphere peut etre obtenue a l’aide de la param ́etrisation sph́erique fonction de deux
-    angles (θ, φ) ∈ [0, 2π] × [−π/2, π/2] :
-        — x = cos(θ) ∗ cos(φ)
-        — y = sin(θ) ∗ cos(φ)
-        — z = sin(φ)
-    */
-    float fX = float(nX);
-    float fY = float(nY);
-    float PI = M_PI;
-    float PI2 = M_PI * 2.;
-    float PI_2 = M_PI_2;
-    float φ, θ;
-    float x, y, z;
-
     o_mesh.vertices.clear();
     o_mesh.normals.clear();
     o_mesh.triangles.clear();
 
-    // Index 0
-    const Vec3 poleNord = Vec3(0, 0, -1);
-    o_mesh.vertices.push_back(poleNord);
-
     // Vertices
-    for (int i = 0; i < nX - 1; i++)
+    for (int i = 0; i <= nX; i++)
     {
-        for (int j = 0; j < nY; j++)
+        float u = 2 * M_PI * i / nX;
+        for (int j = 0; j <= nY; j++)
         {
-            φ = -PI_2 + (i + 1) * (PI / fX);
-            θ = 0 + j * (PI2 / fY);
-
-            x = cos(θ) * cos(φ);
-            y = sin(θ) * cos(φ);
-            z = sin(φ);
-
-            // Index i * nY + j + 1
+            float v = M_PI * j / nY;
+            float x = sin(v) * cos(u);
+            float y = sin(v) * sin(u);
+            float z = cos(v);
             o_mesh.vertices.push_back(Vec3(x, y, z));
         }
     }
 
-    // Index (nX - 1) * nY + 1
-    const Vec3 poleSud = Vec3(0, 0, 1);
-    o_mesh.vertices.push_back(poleSud);
-
     // Triangles
-    // Triangles du pole nord
-    for (int i = 0; i < nY; ++i)
+    for (int i = 0; i < nX; i++)
     {
-        const int a = 0;
-        const int b = i + 1;
-        const int c = b % nY + 1;
-
-        const Triangle triangle = Triangle(a, c, b);
-        o_mesh.triangles.push_back(triangle);
-    }
-
-    for (int i = 0; i < nX - 2; i++)
-    {
+        int index = i * (nY + 1);
         for (int j = 0; j < nY; j++)
         {
-            const int a = j + 1 + nY * i;
-            const int b = a % nY + 1 + nY * i;
-            const int c = a + nY;
-            const int d = b + nY;
-
-            const Triangle triangle1 = Triangle(a, b, d);
-            const Triangle triangle2 = Triangle(a, d, c);
-
-            o_mesh.triangles.push_back(triangle1);
-            o_mesh.triangles.push_back(triangle2);
+            int a = index + j;
+            int b = a + 1;
+            int c = a + (nY + 1);
+            int d = c + 1;
+            o_mesh.triangles.push_back(Triangle(a, b, c));
+            o_mesh.triangles.push_back(Triangle(b, d, c));
         }
     }
 
-    // Triangles du pole sud
-    for (int i = 0; i < nY; ++i)
-    {
-        const int a = (nX - 1) * nY + 1;
-        const int b = a - i - 1;
-        const int c = b % nY + (nX - 2) * nY + 1;
-
-        const Triangle triangle = Triangle(a, b, c);
-        o_mesh.triangles.push_back(triangle);
-    }
-
     // Normales
-    for (const Vec3 v : o_mesh.vertices)
+    for (const Vec3 &v : o_mesh.vertices)
     {
         o_mesh.normals.push_back(v / 1);
     }
 }
+
 
 // Bonus
 void setUnitCube(Mesh &o_mesh, int nX, int nY)
@@ -301,34 +257,10 @@ void setUnitCube(Mesh &o_mesh, int nX, int nY)
     }
 
     // Normales
-    for (const Vec3 v : o_mesh.vertices)
+    for (const Vec3 &v : o_mesh.vertices)
     {
         o_mesh.normals.push_back(v / 1);
     }
-}
-
-void smooth(Mesh &o_mesh)
-{
-    std::vector<Vec3> new_vertices(o_mesh.vertices.size());
-
-    // Pour chaque vertex, calcule la moyenne des positions de ses voisins
-    for (unsigned int i = 0; i < o_mesh.vertices.size(); i++)
-    {
-        Vec3 sum(0, 0, 0);
-        int count = 0;
-        for (Triangle &tri : o_mesh.triangles)
-        {
-            if (tri[0] == i || tri[1] == i || tri[2] == i)
-            {
-                sum += o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]];
-                count += 3;
-            }
-        }
-        new_vertices[i] = sum / count;
-    }
-
-    // Met à jour les positions des vertices dans le mesh
-    o_mesh.vertices = new_vertices;
 }
 
 void setUnitTorus(Mesh &o_mesh, float R, float r, int nX, int nY)
@@ -367,13 +299,13 @@ void setUnitTorus(Mesh &o_mesh, float R, float r, int nX, int nY)
     }
 
     // Normales
-    for (const Vec3 v : o_mesh.vertices)
+    for (const Vec3 &v : o_mesh.vertices)
     {
         o_mesh.normals.push_back(v / 1);
     }
 }
 
-void setUnitCylinder(Mesh &o_mesh, float radius, float height, int nX, int nY)
+/*void setUnitCylinder(Mesh &o_mesh, float radius, float height, int nX, int nY) // Cylindre creux
 {
     o_mesh.vertices.clear();
     o_mesh.normals.clear();
@@ -383,10 +315,6 @@ void setUnitCylinder(Mesh &o_mesh, float radius, float height, int nX, int nY)
     float angle = 2 * M_PI / nX;
 
     // Vertices
-    // Point milieu haut
-    const Vec3 poleNord = Vec3(0, -height / 2, 0);
-    o_mesh.vertices.push_back(poleNord);
-
     // Points cotés
     for (int i = 0; i <= nX; i++)
     {
@@ -398,10 +326,6 @@ void setUnitCylinder(Mesh &o_mesh, float radius, float height, int nX, int nY)
             o_mesh.vertices.push_back(Vec3(x, y, z));
         }
     }
-
-    // Point milieu bas
-    const Vec3 poleSud = Vec3(0, height / 2, 0);
-    o_mesh.vertices.push_back(poleSud);
 
     // Triangles
     for (int i = 0; i < nX ; i++)
@@ -423,7 +347,246 @@ void setUnitCylinder(Mesh &o_mesh, float radius, float height, int nX, int nY)
     {
         o_mesh.normals.push_back(v / 1);
     }
+}*/
+
+void setUnitCylinder(Mesh &o_mesh, float radius, float height, int nX, int nY) {
+    o_mesh.vertices.clear();
+    o_mesh.normals.clear();
+    o_mesh.triangles.clear();
+
+    float half_height = height / 2;
+
+    // Vertices
+    for (int i = 0; i <= nX; i++) {
+        float u = 2 * M_PI * i / nX;
+        for (int j = 0; j <= nY; j++) {
+            float v = height * j / nY - half_height;
+            float x = radius * cos(u);
+            float y = radius * sin(u);
+            float z = v;
+            o_mesh.vertices.push_back(Vec3(x, y, z));
+        }
+    }
+
+    // Pole Nord
+    int top_vertex_index = o_mesh.vertices.size();
+    o_mesh.vertices.push_back(Vec3(0, 0, half_height));
+
+    // Pole Sud
+    int bottom_vertex_index = o_mesh.vertices.size();
+    o_mesh.vertices.push_back(Vec3(0, 0, -half_height));
+
+    // Triangles
+    for (int i = 0; i < nX; i++) {
+        int index = i * (nY + 1);
+        for (int j = 0; j < nY; j++) {
+            int a = index + j;
+            int b = a + 1;
+            int c = a + (nY + 1);
+            int d = c + 1;
+            o_mesh.triangles.push_back(Triangle(a, c, b));
+            o_mesh.triangles.push_back(Triangle(b, c, d));
+        }
+    }
+    // Triangles Pole Nord
+    for (int i = 0; i < nX; i++) {
+        int a = bottom_vertex_index;
+        int b = i * (nY + 1);
+        int c = (i + 1) * (nY + 1);
+        o_mesh.triangles.push_back(Triangle(a, c, b));
+    }
+    // Triangle Pole Sud
+    for (int i = 0; i < nX; i++) {
+        int a = top_vertex_index;
+        int b = (nX - i - 1) * (nY + 1) + nY;
+        int c = (nX - i) * (nY + 1) + nY;
+        o_mesh.triangles.push_back(Triangle(a, b, c));
+    }
+
+    // Normales
+    for (const Vec3 &v : o_mesh.vertices)
+    {
+        o_mesh.normals.push_back(v / 1);
+    }
 }
+
+void setUnitCone(Mesh &o_mesh, float radius, float height, int nX, int nY)
+{
+    o_mesh.vertices.clear();
+    o_mesh.normals.clear();
+    o_mesh.triangles.clear();
+
+    // Vertices
+    for (int i = 0; i <= nX; i++)
+    {
+        float u = 2 * M_PI * i / nX;
+        for (int j = 0; j <= nY; j++)
+        {
+            float v = j * height / nY;
+            float x = radius * (1 - v/height) * cos(u);
+            float y = radius * (1 - v/height) * sin(u);
+            float z = -v/2;
+            o_mesh.vertices.push_back(Vec3(x, y, z));
+        }
+    }
+
+    // Triangles
+    // Sous le cone
+    for (int i = 1; i <= nX; i++)
+    {
+        int a = 0;
+        int b = i * (nY + 1);
+        int c = (i % nX + 1) * (nY + 1);
+        o_mesh.triangles.push_back(Triangle(a, b, c));
+    }
+
+    // Sur le cone
+    for (int i = 0; i < nX; i++)
+    {
+        for (int j = 0; j < nY; j++)
+        {
+            int a = i * (nY + 1) + j;
+            int b = a + 1;
+            int c = (i + 1) * (nY + 1) + j;
+            int d = c + 1;
+            o_mesh.triangles.push_back(Triangle(a, b, c));
+            o_mesh.triangles.push_back(Triangle(b, d, c));
+        }
+    }
+
+    // Normales
+    for (const Vec3 &v : o_mesh.vertices)
+    {
+        o_mesh.normals.push_back(v / 1);
+    }
+}
+
+void setUnitCylinderCone(Mesh &o_mesh, float radius, float height, int nX, int nY)
+{
+    o_mesh.vertices.clear();
+    o_mesh.normals.clear();
+    o_mesh.triangles.clear();
+
+    // Cylinder
+    setUnitCylinder(o_mesh, radius, height, nX, nY);
+
+    // Cone
+    Mesh cone;
+    setUnitCone(cone, radius, height, nX, nY);
+
+    // Translate cone to end of cylinder
+    for (unsigned int i = 0; i < cone.vertices.size(); i++)
+    {
+        cone.vertices[i][2] -= height/2;
+    }
+
+    // Combine vertices, normals, and triangles from cylinder and cone
+    int cylinderVertexCount = o_mesh.vertices.size();
+    for (unsigned int i = 0; i < cone.vertices.size(); i++)
+    {
+        o_mesh.vertices.push_back(cone.vertices[i]);
+    }
+
+    for (unsigned int i = 0; i < cone.triangles.size(); i++)
+    {
+        Triangle triangle = cone.triangles[i];
+        o_mesh.triangles.push_back(Triangle(triangle[0] + cylinderVertexCount, triangle[1] + cylinderVertexCount, triangle[2] + cylinderVertexCount));
+    }
+
+     // Normales
+    for (const Vec3 &v : o_mesh.vertices)
+    {
+        o_mesh.normals.push_back(v / 1);
+    }
+}
+
+float supershape(float phi, float a, float b, float m, float n1, float n2, float n3)
+{
+    float t1 = pow(abs((1 / a) * cos(m * phi / 4)), n2);
+    float t2 = pow(abs((1 / b) * sin(m * phi / 4)), n3);
+    float t3 = pow(t1 + t2, 1 / n1);
+    return 1 / t3;
+}
+
+void setUnitSupershape(Mesh &o_mesh, int nX, int nY, float a, float b, float m, float n1, float n2, float n3)
+{
+    o_mesh.vertices.clear();
+    o_mesh.normals.clear();
+    o_mesh.triangles.clear();
+
+    // Vertices
+    for (int i = 0; i <= nX; i++)
+    {
+        float phi = i * ((M_PI * 2) / nX);
+        for (int j = 0; j <= nY; j++)
+        {
+            float theta = j * (M_PI / nY) - (M_PI / 2);
+            float r = supershape(phi, a, b, m, n1, n2, n3);
+            float x = r * cos(theta) * cos(phi);
+            float y = r * cos(theta) * sin(phi);
+            float z = r * sin(theta);
+            o_mesh.vertices.push_back(Vec3(x, y, z));
+        }
+    }
+
+    // Triangles
+    for (int i = 0; i < nX; i++)
+    {
+        int index = i * (nY + 1);
+        for (int j = 0; j < nY; j++)
+        {
+            int a = index + j;
+            int b = a + 1;
+            int c = a + (nY + 1);
+            int d = c + 1;
+            o_mesh.triangles.push_back(Triangle(a, c, b));
+            o_mesh.triangles.push_back(Triangle(b, c, d));
+        }
+    }
+
+    // Normales
+    for (const Vec3 &v : o_mesh.vertices)
+    {
+        o_mesh.normals.push_back(v / 1);
+    }
+}
+
+
+
+
+
+void smooth(Mesh &o_mesh)
+{
+    std::vector<Vec3> new_vertices(o_mesh.vertices.size());
+
+    // Pour chaque vertex, calcule la moyenne des positions de ses voisins
+    for (unsigned int i = 0; i < o_mesh.vertices.size(); i++)
+    {
+        Vec3 sum(0, 0, 0);
+        int count = 0;
+        for (Triangle &tri : o_mesh.triangles)
+        {
+            if (tri[0] == i || tri[1] == i || tri[2] == i)
+            {
+                sum += o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]];
+                count += 3;
+            }
+        }
+        new_vertices[i] = sum / count;
+    }
+
+    // Met à jour les positions des vertices dans le mesh
+    o_mesh.vertices = new_vertices;
+}
+
+void scale(Mesh &o_mesh,int Axe, float factor)
+{
+    for (long unsigned int i = 0; i < o_mesh.vertices.size(); i++)
+    {
+        o_mesh.vertices[i][Axe] *= factor;
+    }
+}
+
 
 bool saveOFF(const std::string &filename,
              std::vector<Vec3> &i_vertices,
@@ -718,19 +881,19 @@ void draw()
 
     if (display_unit_cone)
     {
-        glColor3f(0.7, 0.0, 1.0);
+        glColor3f(1.0, 0.5, 0.0);
         drawTriangleMesh(unit_cone);
     }
 
     if (display_unit_cylinder_cone)
     {
-        glColor3f(0.7, 0.0, 1.0);
+        glColor3f(1.0, 0.5, 0.5);
         drawTriangleMesh(unit_cylinder_cone);
     }
 
     if (display_unit_supershape)
     {
-        glColor3f(0.7, 0.0, 1.0);
+        glColor3f(1.0, 1.0, 0);
         drawTriangleMesh(unit_supershape);
     }
 
@@ -789,6 +952,7 @@ void display()
     camera.apply();
     draw();
     glFlush();
+
     glutSwapBuffers();
 }
 
@@ -801,7 +965,7 @@ void key(unsigned char keyPressed, int x, int y)
 {
     switch (keyPressed)
     {
-    case 'f':
+    case 'p':
         if (fullScreen == true)
         {
             glutReshapeWindow(SCREENWIDTH, SCREENHEIGHT);
@@ -813,22 +977,15 @@ void key(unsigned char keyPressed, int x, int y)
             fullScreen = true;
         }
         break;
-
     case 'w': // Change le mode d'affichage
         changeDisplayMode();
         break;
-
     case 'n': // Press n key to display normals
         display_normals = !display_normals;
         break;
-    case 's': // Press n key to smooth the vertices
-        smooth(unit_cube);
-        break;
-
     case '1': // Toggle loaded mesh display
         display_loaded_mesh = !display_loaded_mesh;
         break;
-
     case '2': // Toggle unit sphere mesh display
         display_unit_sphere = !display_unit_sphere;
         break;
@@ -851,57 +1008,214 @@ void key(unsigned char keyPressed, int x, int y)
         display_unit_supershape = !display_unit_supershape;
         break;
     case '-':
-        setUnitSphere(unit_sphere, --valfX, --valfY);
-        setUnitCube(unit_cube, --valfX, --valfY);
-        setUnitTorus(unit_torus, valfR, valfr, --valfX, --valfY);
-        setUnitCylinder(unit_cylinder, valRadius, valHeight, --valfX, --valfY);
-        // setUnitCone(unit_cone, valfR, valfr, --valfX, --valfY);
-        // setUnitCylinderCone(unit_cylinder_cone, valfR, valfr, --valfX, --valfY);
-        // setUnitSupershape(unit_supershape, valfR, valfr, --valfX, --valfY);
+        valfX = std::max(0, valfX - 1);
+        valfY = std::max(0, valfY - 1);
+        setUnitSphere(unit_sphere, valfX, valfY);
+        setUnitCube(unit_cube, valfX, valfY);
+        setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        setUnitCone(unit_cone, valRadius, valHeight, valfX, valfY);
+        setUnitCylinderCone(unit_cylinder_cone, valRadius, valHeight, valfX, valfY);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
         break;
     case '+':
-        setUnitSphere(unit_sphere, ++valfX, ++valfY);
-        setUnitCube(unit_cube, ++valfX, ++valfY);
-        setUnitTorus(unit_torus, valfR, valfr, ++valfX, ++valfY);
-        setUnitCylinder(unit_cylinder, valRadius, valHeight, ++valfX, ++valfY);
-        // setUnitCone(unit_cone, valfR, valfr, ++valfX, ++valfY);
-        // setUnitCylinderCone(unit_cylinder_cone, valfR, valfr, ++valfX, ++valfY);
-        // setUnitSupershape(unit_supershape, valfR, valfr, ++valfX, ++valfY);
+        valfX += 1;
+        valfY += 1;
+        setUnitSphere(unit_sphere, valfX, valfY);
+        setUnitCube(unit_cube, valfX, valfY);
+        setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
+        setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        setUnitCone(unit_cone, valRadius, valHeight, valfX, valfY);
+        setUnitCylinderCone(unit_cylinder_cone, valRadius, valHeight, valfX, valfY);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
         break;
     // Torus
-    case 'r':
+    case 'q':
         valfr += 0.1;
         setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
         break;
-    case 't':
-        valfr -= 0.1;
+    case 'Q':
+        valfr = std::max(0.0f, valfr - 0.1f);
         setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
         break;
-    case 'R':
+    case 's':
         valfR += 0.1;
         setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
         break;
-    case 'T':
-        valfR -= 0.1;
+    case 'S':
+        valfR = std::max(0.0f, valfR - 0.1f);
         setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
         break;
     // Cylinder
-    case 'h':
+    case 'd':
         valHeight += 0.1;
         setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        setUnitCone(unit_cone, valRadius, valHeight, valfX, valfY);
+        setUnitCylinderCone(unit_cylinder_cone, valRadius, valHeight, valfX, valfY);
         break;
-    case 'H':
-        valHeight -= 0.1;
+    case 'D':
+        valHeight = std::max(0.0f, valHeight - 0.1f);
         setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        setUnitCone(unit_cone, valRadius, valHeight, valfX, valfY);
+        setUnitCylinderCone(unit_cylinder_cone, valRadius, valHeight, valfX, valfY);
         break;
-    case 'y':
+    case 'f':
         valRadius += 0.1;
         setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        setUnitCone(unit_cone, valRadius, valHeight, valfX, valfY);
+        setUnitCylinderCone(unit_cylinder_cone, valRadius, valHeight, valfX, valfY);
         break;
-    case 'Y':
-        valRadius -= 0.1;
+    case 'F':
+        valRadius = std::max(0.0f, valRadius - 0.1f);
         setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
+        setUnitCone(unit_cone, valRadius, valHeight, valfX, valfY);
+        setUnitCylinderCone(unit_cylinder_cone, valRadius, valHeight, valfX, valfY);
         break;
+    // Supershape
+    case 'g':
+        vala += 0.1;
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'G':
+        vala = std::max(0.0f, vala - 0.1f);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'h':
+        valb += 0.1;
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'H':
+        valb = std::max(0.0f, valb - 0.1f);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'j':
+        valm += 0.1;
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'J':
+        valm = std::max(0.0f, valm - 0.1f);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'k':
+        valn1 += 0.1;
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'K':
+        valn1 = std::max(0.0f, valn1 - 0.1f);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'l':
+        valn2 += 0.1;
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'L':
+        valn2 = std::max(0.0f, valn2 - 0.1f);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'm':
+        valn3 += 0.1;
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'M':
+        valn3 = std::max(0.0f, valn3 - 0.1f);
+        setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
+        break;
+    case 'Z': // Etire le cube selon l'axe z
+        if(display_unit_sphere)
+            scale(unit_sphere,2, 1.1); // Augmente la taille selon l'axe z
+        if(display_unit_cube)
+            scale(unit_cube,2, 1.1); // Augmente la taille selon l'axe z
+        if(display_unit_cylinder)
+            scale(unit_cylinder,2, 1.1); // Augmente la taille selon l'axe z
+        if(display_unit_torus)
+            scale(unit_torus,2, 1.1); // Augmente la taille selon l'axe z
+        if(display_unit_cone)
+            scale(unit_cone,2, 1.1); // Augmente la taille selon l'axe z
+        if(display_unit_cylinder_cone)
+            scale(unit_cylinder_cone,2, 1.1); // Augmente la taille selon l'axe z
+        if(display_unit_supershape)
+            scale(unit_supershape,2, 1.1); // Augmente la taille selon l'axe z
+        break;
+    case 'z': // Etire le cube selon l'axe z
+        if(display_unit_sphere)
+            scale(unit_sphere,2, 0.9); // Diminue la taille selon l'axe z
+        if(display_unit_cube)
+            scale(unit_cube,2, 0.9); // Diminue la taille selon l'axe z
+        if(display_unit_cylinder)
+            scale(unit_cylinder,2, 0.9); // Diminue la taille selon l'axe z
+        if(display_unit_torus)
+            scale(unit_torus,2, 0.9); // Diminue la taille selon l'axe z
+        if(display_unit_cone)
+            scale(unit_cone,2, 0.9); // Diminue la taille selon l'axe z
+        if(display_unit_cylinder_cone)
+            scale(unit_cylinder_cone,2, 0.9); // Diminue la taille selon l'axe z
+        if(display_unit_supershape)
+            scale(unit_supershape,2, 0.9); // Diminue la taille selon l'axe z
+        break;
+    case 'A': // Etire le cube selon l'axe x
+        if(display_unit_sphere)
+            scale(unit_sphere,0, 1.1); // Augmente la taille selon l'axe x
+        if(display_unit_cube)
+            scale(unit_cube,0, 1.1); // Augmente la taille selon l'axe x
+        if(display_unit_cylinder)
+            scale(unit_cylinder,0, 1.1); // Augmente la taille selon l'axe x
+        if(display_unit_torus)
+            scale(unit_torus,0, 1.1); // Augmente la taille selon l'axe x
+        if(display_unit_cone)
+            scale(unit_cone,0, 1.1); // Augmente la taille selon l'axe x
+        if(display_unit_cylinder_cone)
+            scale(unit_cylinder_cone,0, 1.1); // Augmente la taille selon l'axe x
+        if(display_unit_supershape)
+            scale(unit_supershape,0, 1.1); // Augmente la taille selon l'axe x
+        break;
+    case 'a': // Etire le cube selon l'axe x
+        if(display_unit_sphere)
+            scale(unit_sphere,0, 0.9); // Diminue la taille selon l'axe x
+        if(display_unit_cube)
+            scale(unit_cube,0, 0.9); // Diminue la taille selon l'axe x
+        if(display_unit_cylinder)
+            scale(unit_cylinder,0, 0.9); // Diminue la taille selon l'axe x
+        if(display_unit_torus)
+            scale(unit_torus,0, 0.9); // Diminue la taille selon l'axe x
+        if(display_unit_cone)
+            scale(unit_cone,0, 0.9); // Diminue la taille selon l'axe x
+        if(display_unit_cylinder_cone)
+            scale(unit_cylinder_cone,0, 0.9); // Diminue la taille selon l'axe x
+        if(display_unit_supershape)
+            scale(unit_supershape,0, 0.9); // Diminue la taille selon l'axe x
+        break;
+    case 'O':  // Etire le cube selon l'axe y
+        if(display_unit_sphere)
+            scale(unit_sphere,1, 1.1); // Augmente la taille selon l'axe y
+        if(display_unit_cube)
+            scale(unit_cube,1, 1.1); // Augmente la taille selon l'axe y
+        if(display_unit_cylinder)
+            scale(unit_cylinder,1, 1.1); // Augmente la taille selon l'axe y
+        if(display_unit_torus)
+            scale(unit_torus,1, 1.1); // Augmente la taille selon l'axe y
+        if(display_unit_cone)
+            scale(unit_cone,1, 1.1); // Augmente la taille selon l'axe y
+        if(display_unit_cylinder_cone)
+            scale(unit_cylinder_cone,1, 1.1); // Augmente la taille selon l'axe y
+        if(display_unit_supershape)
+            scale(unit_supershape,1, 1.1); // Augmente la taille selon l'axe y
+        break;
+    case 'o': // Etire le cube selon l'axe y
+        if(display_unit_sphere)
+            scale(unit_sphere,1, 0.9); // Diminue la taille selon l'axe y
+        if(display_unit_cube)
+            scale(unit_cube,1, 0.9); // Diminue la taille selon l'axe y
+        if(display_unit_cylinder)
+            scale(unit_cylinder,1, 0.9); // Diminue la taille selon l'axe y
+        if(display_unit_torus)
+            scale(unit_torus,1, 0.9); // Diminue la taille selon l'axe y
+        if(display_unit_cone)
+            scale(unit_cone,1, 0.9); // Diminue la taille selon l'axe y
+        if(display_unit_cylinder_cone)
+            scale(unit_cylinder_cone,1, 0.9); // Diminue la taille selon l'axe y
+        if(display_unit_supershape)
+            scale(unit_supershape,1, 0.9); // Diminue la taille selon l'axe y
+        break;// Etire le cube selon l'axe y
     default:
         break;
     }
@@ -1001,9 +1315,9 @@ int main(int argc, char **argv)
     setUnitCube(unit_cube, valfX, valfY);
     setUnitTorus(unit_torus, valfR, valfr, valfX, valfY);
     setUnitCylinder(unit_cylinder, valRadius, valHeight, valfX, valfY);
-    // setUnitCone(unit_cone, valfR, valfr, valfX, valfY);
-    // setUnitCylinderCone(unit_cylinder_cone, valfR, valfr, valfX, valfY);
-    // setUnitSupershape(unit_supershape, valfR, valfr, valfX, valfY);
+    setUnitCone(unit_cone, valRadius, valHeight, valfX, valfY);
+    setUnitCylinderCone(unit_cylinder_cone, valRadius, valHeight, valfX, valfY);
+    setUnitSupershape(unit_supershape, valfX, valfY, vala, valb, valm, valn1, valn2, valn3);
 
     glutMainLoop(); // Le programme se lance et appelle en boucle les fonctions au dessus
     return EXIT_SUCCESS;
