@@ -1,17 +1,17 @@
-# Makefile pour un unique exécutable
+# Makefile pour un unique exï¿½cutable
 
-# liste des variables à renseigner
+# liste des variables ï¿½ renseigner
 #   CIBLE : nom du programme ( $(CIBLE).c doit contenir main() )
 #   SRCS : ensemble des fichiers sources 
-#   LIBS : liste des bibliothèques utiles à l'édition des liens 
+#   LIBS : liste des bibliothï¿½ques utiles ï¿½ l'ï¿½dition des liens 
 #          (format : -lnom1 -lnom2 ...) 
-#   PREFIX : chemin de la hiérarchie 
+#   PREFIX : chemin de la hiï¿½rarchie 
 #
 # NE PAS OUBLIER D'AJOUTER LA LISTE DES DEPENDANCES A LA FIN DU FICHIER
 
 CIBLE = tp
-SRCS =  src/Camera.cpp tp.cpp src/Trackball.cpp 
-LIBS =  -L/usr/lib -lglut -lGLU -lGL -lm -lpthread -lgsl -lgslcblas
+SRCS =  src/Camera.cpp tp.cpp src/Trackball.cpp src/Mesh.cpp src/Vertex.cpp src/Shader.cpp
+LIBS =  -lglut -lGLU -lGL -lm -lGLEW -lpthread
 
 #########################################################"
 
@@ -30,15 +30,15 @@ CXXFLAGS = -Wall -O3
 # option du preprocesseur
 CPPFLAGS =  -I$(INCDIR) 
 
-# options du linker et liste des bibliothèques à charger
+# options du linker et liste des bibliothï¿½ques ï¿½ charger
 LDFLAGS = -L/usr/X11R6/lib              
 LDLIBS = -L$(LIBDIR) $(LIBS)  
 
-# construire la liste des fichiers objets une nouvelle chaine à partir
+# construire la liste des fichiers objets une nouvelle chaine ï¿½ partir
 # de SRCS en substituant les occurences de ".c" par ".o" 
 OBJS = $(SRCS:.cpp=.o)   
 
-# cible par défaut
+# cible par dï¿½faut
 $(CIBLE): $(OBJS)
 
 install:  $(CIBLE)
@@ -58,9 +58,7 @@ veryclean: clean
 dep:
 	gcc $(CPPFLAGS) -MM $(SRCS)
 
-# liste des dépendances générée par 'make dep'
-Camera.o: src/Camera.cpp src/Camera.h src/Vec3.h src/Trackball.h
-tp.o: tp.cpp src/Vec3.h src/Camera.h src/Trackball.h
+# liste des dï¿½pendances gï¿½nï¿½rï¿½e par 'make dep'
+Camera.o: src/Camera.cpp src/Camera.h src/Vec3.h src/Trackball.h 
+tp.o: tp.cpp src/Vec3.h src/Camera.h src/Trackball.h src/Edge.h src/Triangle.cpp src/Triangle.h src/Vertex.cpp src/Vertex.h src/Mesh.cpp src/Mesh.h src/Shader.cpp src/Shader.h
 Trackball.o: src/Trackball.cpp src/Trackball.h
-
-

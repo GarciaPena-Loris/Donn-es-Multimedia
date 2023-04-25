@@ -551,32 +551,11 @@ void setUnitSupershape(Mesh &o_mesh, int nX, int nY, float a, float b, float m, 
     }
 }
 
+void smooth(Mesh &o_mesh, float factor){
+    o_mesh.smooth(factor);
 
-
-
-
-void smooth(Mesh &o_mesh)
-{
-    std::vector<Vec3> new_vertices(o_mesh.vertices.size());
-
-    // Pour chaque vertex, calcule la moyenne des positions de ses voisins
-    for (unsigned int i = 0; i < o_mesh.vertices.size(); i++)
-    {
-        Vec3 sum(0, 0, 0);
-        int count = 0;
-        for (Triangle &tri : o_mesh.triangles)
-        {
-            if (tri[0] == i || tri[1] == i || tri[2] == i)
-            {
-                sum += o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]] + o_mesh.vertices[tri[0]];
-                count += 3;
-            }
-        }
-        new_vertices[i] = sum / count;
-    }
-
-    // Met à jour les positions des vertices dans le mesh
-    o_mesh.vertices = new_vertices;
+    //Recalcule des normales et mise à jour de l'affichage
+    o_mesh.recomputeSmoothVertexNormals(0);
 }
 
 void scale(Mesh &o_mesh,int Axe, float factor)
@@ -587,6 +566,13 @@ void scale(Mesh &o_mesh,int Axe, float factor)
     }
 }
 
+void swell(Mesh &o_mesh, float factor)
+{
+    for (long unsigned int i = 0; i < o_mesh.vertices.size(); ++i) {
+        Vec3 normal = o_mesh.normals[i];
+        o_mesh.vertices[i] += factor * normal;
+    }
+}
 
 bool saveOFF(const std::string &filename,
              std::vector<Vec3> &i_vertices,
@@ -899,7 +885,7 @@ void draw()
 
     if (display_loaded_mesh)
     {
-        glColor3f(0.8, 0.8, 0.9);
+        glColor3f(0.96, 0.66, 0.86);
         drawTriangleMesh(mesh);
     }
 
@@ -1216,6 +1202,18 @@ void key(unsigned char keyPressed, int x, int y)
         if(display_unit_supershape)
             scale(unit_supershape,1, 0.9); // Diminue la taille selon l'axe y
         break;// Etire le cube selon l'axe y
+    case 'u':
+            swell(mesh,0.01f);
+        break;
+    case 'U':
+            swell(mesh,-0.01f);
+        break;
+    case 'i':
+            smooth(mesh,0.01f);
+        break;
+    case 'I':
+            smooth(mesh,-0.01f);
+        break;
     default:
         break;
     }
@@ -1260,6 +1258,7 @@ void mouse(int button, int state, int x, int y)
     }
     idle();
 }
+
 
 void motion(int x, int y)
 {
@@ -1306,7 +1305,8 @@ int main(int argc, char **argv)
     key('?', 0, 0);
 
     // Unit sphere mesh loaded with precomputed normals
-    openOFF("data/unit_sphere_n.off", mesh.vertices, mesh.normals, mesh.triangles); // Ouvrir le fichier
+    //openOFF("data/unit_sphere_n.off", mesh.vertices, mesh.normals, mesh.triangles); // Ouvrir le fichier
+    openOFF("data/avion_n.off", mesh.vertices, mesh.normals, mesh.triangles); // Ouvrir le fichier
 
     // Uncomment to see other meshes
     // openOFF("data/elephant_n.off", mesh.vertices, mesh.normals, mesh.triangles);
