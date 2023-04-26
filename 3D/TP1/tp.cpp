@@ -552,10 +552,6 @@ void setUnitSupershape(Mesh &o_mesh, int nX, int nY, float a, float b, float m, 
 }
 
 void smooth(Mesh &o_mesh, float factor){
-    o_mesh.smooth(factor);
-
-    //Recalcule des normales et mise à jour de l'affichage
-    o_mesh.recomputeSmoothVertexNormals(0);
 }
 
 void scale(Mesh &o_mesh,int Axe, float factor)

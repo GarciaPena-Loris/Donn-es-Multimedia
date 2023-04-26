@@ -10,7 +10,7 @@
 # NE PAS OUBLIER D'AJOUTER LA LISTE DES DEPENDANCES A LA FIN DU FICHIER
 
 CIBLE = tp
-SRCS =  src/Camera.cpp tp.cpp src/Trackball.cpp src/Mesh.cpp src/Vertex.cpp src/Shader.cpp
+SRCS =  src/Camera.cpp tp.cpp src/Trackball.cpp
 LIBS =  -lglut -lGLU -lGL -lm -lGLEW -lpthread
 
 #########################################################"
@@ -60,5 +60,5 @@ dep:
 
 # liste des d�pendances g�n�r�e par 'make dep'
 Camera.o: src/Camera.cpp src/Camera.h src/Vec3.h src/Trackball.h 
-tp.o: tp.cpp src/Vec3.h src/Camera.h src/Trackball.h src/Edge.h src/Triangle.cpp src/Triangle.h src/Vertex.cpp src/Vertex.h src/Mesh.cpp src/Mesh.h src/Shader.cpp src/Shader.h
+tp.o: tp.cpp src/Vec3.h src/Camera.h src/Trackball.h
 Trackball.o: src/Trackball.cpp src/Trackball.h

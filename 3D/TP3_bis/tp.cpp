@@ -113,7 +113,28 @@ static float interpolant2 = 0.f;
 static float anglex = 0.f;
 static float angley = 0.f;
 static float anglez = 0.f;
-static float offset = 0.5f;
+static float offsetx = 0.f;
+static float offsety = 0.f;
+static float offsetz = 0.f;
+bool show_animation = false;
+bool increment1 = true;
+bool increment2 = true;
+
+float nX = 15;
+float nY = 15;
+float R = 0.7;
+float r = 0.3;
+float radius = 0.5;
+float height = 1;
+float m = 6;
+float a = 1;
+float b = 1;
+float n1 = 1;
+float n2 = 1;
+float n3 = 1;
+
+bool display_normals;
+int compteurChameaux = 0;
 
 typedef enum {Wire, Phong, Solid} RenderingMode;
 static RenderingMode mode = Phong;
@@ -168,10 +189,17 @@ inline void glDrawPoint (const Vertex & v) {
     glDrawPoint (v.getPosition (), v.getNormal ());
 }
 
+
+
+
+// ########################################
+// ########################################
+// ########################################
+// ########################################
+
+
 //A completer
 void updateAnimation (){
-
-
     //Récupérer la position des sommets du maillage courant à mettre à jour
     vector<Vertex> & V = current_mesh.getVertices ();
 
@@ -180,10 +208,6 @@ void updateAnimation (){
 
     const vector<Vertex> & V0 = mesh_pose_0.getVertices ();
     const vector<Vertex> & V1 = mesh_pose_1.getVertices ();
-    
-
-    //(2) Faire la moyenne pondérée entre les positions de mesh_pose_0, mesh_pose_1 et Mesh_pose_2
-    //Affecter le résultat aux positions de current_mesh
     const vector<Vertex> & V2 = mesh_pose_2.getVertices ();
 
     //Les variables interpolant0, interpolant1 et interpolant3 permettent de changer la pondération
@@ -194,6 +218,7 @@ void updateAnimation (){
     // Normaliser les poids : i.e. diviser chaque poids par la somme des poids
     //A completer
 
+    //(2) Faire la moyenne pondérée entre les positions de mesh_pose_0, mesh_pose_1 et Mesh_pose_2
     w0 /= (w0 + w1 + w2);
     w1 /= (w0 + w1 + w2);
     w2 /= (w0 + w1 + w2);
@@ -204,13 +229,13 @@ void updateAnimation (){
     } */
 
     // (2)
-    for (int i = 0; i < V.size(); i++) {
+    //Affecter le résultat aux positions de current_mesh
+    
+    for (unsigned int i = 0; i < V.size(); i++) {
         V[i].setPosition(((1-w1) * V0[i].getPosition() + w1 * V1[i].getPosition() + (1-w2) * V0[i].getPosition() + w2 * V2[i].getPosition()) / 2);
     }
 
     //Ajouter des transformation
-    //Translation a mettre a jour en utilisant la variable offset
-   //Définir un vecteur de translation en utilisant la matrice offset
 
     //Matrices de rotation
     Mat3 Rx, Ry, Rz;
@@ -235,14 +260,16 @@ void updateAnimation (){
     //tester votre matrices en utilisant la matrice model
     Mat3 rotation = Rx * Ry * Rz;
 
-    for (int i = 0; i < V.size(); i++) {
+    for (unsigned int i = 0; i < V.size(); i++) {
         V[i].setPosition(rotation * V[i].getPosition());
     }
 
-    Vec3 translation(offset, 0.5 * cos(anglex), 0.);
+    //Translation a mettre a jour en utilisant la variable offset
+    //Définir un vecteur de translation en utilisant la matrice offset
+    Vec3 translation(offsetx, offsety, offsetz);
 
     //Appliquer la translation à chaque sommet
-    for (int i = 0; i < V.size(); i++) {
+    for (unsigned int i = 0; i < V.size(); i++) {
         V[i].setPosition(V[i].getPosition() + translation);
     }
 
@@ -250,6 +277,190 @@ void updateAnimation (){
     current_mesh.recomputeSmoothVertexNormals(0);
     initGLList ();
 }
+
+// ########################################
+// ########################################
+// ########################################
+// ########################################
+
+void smooth(float factor){
+    current_mesh.smooth(factor);
+
+    //Recalcule des normales et mise à jour de l'affichage
+    current_mesh.recomputeSmoothVertexNormals(0);
+    initGLList ();
+}
+
+void smoothTaubin(int ite, float lambda, float mu){
+    current_mesh.smoothTaubin(lambda, mu, ite);
+    //Recalcule des normales et mise à jour de l'affichage
+    current_mesh.recomputeSmoothVertexNormals(0);
+    initGLList ();
+}
+
+void swell(float factor){
+    current_mesh.swell(factor);
+
+    //Recalcule des normales et mise à jour de l'affichage
+    current_mesh.recomputeSmoothVertexNormals(0);
+    initGLList ();
+}
+
+void scale(int Axe, float factor){
+    current_mesh.scale(Axe, factor);
+
+    //Recalcule des normales et mise à jour de l'affichage
+    current_mesh.recomputeSmoothVertexNormals(0);
+    initGLList ();
+}
+
+// ########################################
+// ########################################
+
+void animation() {
+    if (increment1) {
+        interpolant1 += 0.1;
+        if (interpolant1 >= 1.0) {
+            increment1 = false;
+            increment2 = true;
+        }
+    }
+    else if (increment2) {
+        interpolant2 += 0.1;
+        if (interpolant2 >= 1.0) {
+            increment2 = false;
+        }
+    }
+    else if (interpolant2 >= 0.0) {
+        interpolant2 -= 0.1;
+    }
+    else {
+        interpolant1 -= 0.1;
+        if (interpolant1 <= 0.0) {
+            increment1 = true;
+        }
+    }
+
+    if (interpolant1 >= 0 && interpolant1 <= 0.5) {
+        anglex += 0.1f;
+        angley += 0.1f;
+        anglez += 0.1f;
+        if( anglex >= (float)M_PI*2.f ) anglex = 0.;
+        if( angley >= (float)M_PI*2.f ) angley = 0.;
+        if( anglez >= (float)M_PI*2.f ) anglez = 0.;
+    }
+
+    if (compteurChameaux <= 5) {
+        offsetx += 0.1;
+        offsety += 0.1;
+    }
+    else if (compteurChameaux >= 100 && compteurChameaux <= 105) {
+        offsetx = offsetx - 0.3; 
+    }
+    else if (compteurChameaux >= 200 &&  compteurChameaux <= 205) {
+        offsety = offsety - 0.2; 
+    }
+    else if (compteurChameaux >= 300 &&  compteurChameaux <= 305) {
+        offsetx = offsetx + 0.3; 
+    }
+    else if (compteurChameaux >= 400 &&  compteurChameaux <= 405) {
+        offsetx -= 0.1;
+        offsety += 0.1;
+    }
+    
+    if (interpolant1 >= 0 && interpolant1 <= 0.3)
+        glClearColor (1.0, 0.0, 0.0, 1.0);
+    if (interpolant1 >= 0.3 && interpolant1 <= 0.6)
+        glClearColor (0.0, 1.0, 0.0, 1.0);
+    if (interpolant1 >= 0.6 && interpolant1 <= 1)
+        glClearColor (0.0, 0.0, 1.0, 1.0);
+    if (interpolant2 >= 0 && interpolant2 <= 0.3)
+        glClearColor (1.0, 1.0, 0.0, 1.0);
+    if (interpolant2 >= 0.3 && interpolant2 <= 0.6)
+        glClearColor (0.0, 1.0, 1.0, 1.0);
+    if (interpolant2 >= 0.6 && interpolant2 <= 1)
+        glClearColor (1.0, 0.0, 1.0, 1.0);
+
+    updateAnimation();
+    compteurChameaux = (compteurChameaux + 1) % 500;
+}
+
+// ########################################
+// ########################################
+
+void displayUnitCamel() {
+    openOFF(std::string("./data/camel.off"), current_mesh, 0);
+    initGLList();
+}
+
+void displayUnitSphere() {
+    GLfloat material_color[4] = {1.0, 0.0, 1.0, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+
+    current_mesh.setUnitSphere(nX, nY);
+    initGLList();
+}
+
+void displayUnitCube() {
+    GLfloat material_color[4] = {1.0, 0.0, 0.0, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitCube(nX, nY);
+    initGLList();
+}
+
+void displayUnitTorus() {
+    GLfloat material_color[4] = {0.2, 0.2, 1.0, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitTorus(R, r, nX, nY);
+    initGLList();
+}
+
+void displayUnitEmptyCylinder() {
+    GLfloat material_color[4] = {0.0, 0.0, 0.0, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitEmptyCylinder(R, r, nX, nY);
+    initGLList();
+}
+
+void displayUnitCylinder() {
+    GLfloat material_color[4] = {1.0, 1.0, 0.0, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitCylinder(R, r, nX, nY);
+    initGLList();
+}
+
+void displayUnitCone() {
+    GLfloat material_color[4] = {1.0, 1.0, 0.9, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitCone(radius, height, nX, nY);
+    initGLList();
+}
+
+void displayUnitCylinderCone() {
+    GLfloat material_color[4] = {1.0, 0.2, 0.3, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitCylinderCone(radius, height, nX, nY);
+    initGLList();
+}
+
+void displayUnitSupershape() {
+    GLfloat material_color[4] = {0.0, 1.0, 1.0, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitSupershape(nX, nY, a, b, m, n1, n2, n3);
+    initGLList();
+}
+
+
+// ########################################
+// ########################################
+// ########################################
+// ########################################
+
+
+
+
+
+
 
 void setShaderValues () {
     phongShader->setAmbientRef(ambientRef);
@@ -321,7 +532,7 @@ void initLights () {
     GLfloat diffuse_color_1[4] = {0.28, 0.39, 1.0, 1};
     GLfloat diffuse_color_2[4] = {1.0, 0.69, 0.23, 1};
 
-    GLfloat specular_color_0[4] = {0.8, 0.0, 0.0, 1};
+    GLfloat specular_color_0[4] = {0.5, 0.0, 0.0, 1};
     GLfloat specular_color_1[4] = {0.0, 0.8, 0.0, 1};
     GLfloat specular_color_2[4] = {0.0, 0.0, 0.8, 1};
 
@@ -439,6 +650,7 @@ void idle () {
     static float lastTime = glutGet ((GLenum)GLUT_ELAPSED_TIME);
     static unsigned int counter = 0;
     counter++;
+    int nbBoucle = 0;
     float currentTime = glutGet ((GLenum)GLUT_ELAPSED_TIME);
     if (currentTime - lastTime >= 1000.0f) {
         FPS = counter;
@@ -453,38 +665,49 @@ void idle () {
                      numOfTriangles, FPS);
         glutSetWindowTitle (FPSstr);
         lastTime = currentTime;
-
+        nbBoucle = nbBoucle + 1 % 2000;
     }
+    if (nbBoucle == 0 && show_animation) {
+        animation();
+    }
+    
     glutPostRedisplay ();
 }
 
 void printUsage () {
     cerr << endl
          << "--------------------------------------" << endl
-         << "HAI60I - Examen TP" << endl
+         << "TP REVISION" << endl
          << "--------------------------------------" << endl
-         << "USAGE: ./Main <file>.off" << endl
-         << "--------------------------------------" << endl
-         << "Keyboard commands" << endl
-         << "--------------------------------------" << endl
-         << " ?: Print help" << endl
          << " w: Toggle wireframe Mode" << endl
-         << " f: Toggle full screen mode" << endl
-         << " A/a : Augmente/Diminue le poids du modele 0 pour l’interpolation" << endl
-         << " B/b : Augmente/Diminue le poids du modele 1 pour l’interpolation" << endl
-         << " C/c : Augmente/Diminue le poids du modele 2 pour l’interpolation" << endl
-         << " R/r : Augmente/Diminue l’angle de rotation" << endl
-         << " +/- : Augmente/Diminue l’offset du maillage pour la translation" << endl
-         << " <drag>+<left button>: rotate model" << endl
-         << " <drag>+<right button>: move model" << endl
-         << " <drag>+<middle button>: zoom" << endl
+         << " *: Toggle full screen mode" << endl
+         << " a/A : Augmente/Diminue ambiantRef" << endl
+         << " z/Z : Augmente/Diminue diffuseRef" << endl
+         << " e/E : Augmente/Diminue SpecularRef" << endl
+         << " t/T : Augmente/Diminue le poids du modele 0 pour l’interpolation" << endl
+         << " y/Y : Augmente/Diminue le poids du modele 1 pour l’interpolation" << endl
+         << " u/U : Augmente/Diminue le poids du modele 2 pour l’interpolation" << endl
+         << " s/S : Rotation sur x" << endl
+         << " d/D : Rotation sur y" << endl
+         << " f/F : Rotation sur z" << endl
+         << " g/G : Rotation sur x,y,z" << endl
+         << " h/H : Translate +/- sur x" << endl
+         << " j/J : Translate +/- sur y" << endl
+         << " k/K : Translate +/- sur z" << endl
+         << " +/- : Augmente/Diminue l’offset, nX et nY" << endl
+         << " x/X : Augmente/Diminue smooth" << endl
+         << " c : Fait smooth Taubin" << endl
+         << " v/V : Augmente/Diminue gonflement" << endl
+         << " ','/'?' : Augmente/Diminue l'epaisseur sur x" << endl
+         << " ';'/'.' : Augmente/Diminue l'epaisseur sur y" << endl
+         << " ':'/'/' : Augmente/Diminue l'epaisseur sur z" << endl
          << " q, <esc>: Quit" << endl << endl
          << "--------------------------------------" << endl;
 }
 
 void key (unsigned char keyPressed, int x, int y) {
     switch (keyPressed) {
-    case 'f':
+    case '*':
         if (fullScreen == true) {
             glutReshapeWindow (SCREENWIDTH, SCREENHEIGHT);
             fullScreen = false;
@@ -509,129 +732,195 @@ void key (unsigned char keyPressed, int x, int y) {
             mode = Wire;
         }
         break;
-    case '1':
+    case 'a':
         ambientRef = ambientRef + 0.1f;
         break;
-    case '2':
+    case 'A':
         ambientRef = ambientRef - 0.1f;
         break;
-    case '4':
+    case 'z':
         diffuseRef = diffuseRef + 0.1f;
         break;
-    case '5':
+    case 'Z':
         diffuseRef = diffuseRef - 0.1f;
         break;
-    case '7':
+    case 'e':
         specularRef = specularRef + 0.1f;
         break;
-    case '8':
+    case 'E':
         specularRef = specularRef - 0.1f;
         break;
-    case 'A':
+    case 't':
         interpolant0 = std::min( interpolant0 + 0.01f, 1.0f);
         updateAnimation();
         break;
-    case 'a':
+    case 'T':
         interpolant0 = std::max( interpolant0 - 0.01f, 0.0f);
         updateAnimation();
         break;
-    case 'B':
+    case 'y':
         interpolant1 = std::min( interpolant1 + 0.01f, 1.0f);
         updateAnimation();
         break;
-    case 'b':
+    case 'Y':
         interpolant1 = std::max( interpolant1 - 0.01f, 0.0f);
         updateAnimation();
         break;
-    case 'C':
+    case 'u':
         interpolant2 = std::min( interpolant2 + 0.01f, 1.0f);
         updateAnimation();
         break;
-    case 'c':
+    case 'U':
         interpolant2 = std::max( interpolant2 - 0.01f, 0.0f);
         updateAnimation();
         break;
-    case 'R':
-        anglex += 0.1f;
-        angley += 0.1f;
-        anglez += 0.1f;
-        if( anglex >= (float)M_PI*2.f ) anglex = 0.;
-        if( angley >= (float)M_PI*2.f ) angley = 0.;
-        if( anglez >= (float)M_PI*2.f ) anglez = 0.;
-        updateAnimation();
-        break;
-    case 'r':
-        anglex -= 0.1f;
-        angley -= 0.1f;
-        anglez -= 0.1f;
-        if( anglex <= 0.f ) anglex = (float)M_PI*2.f;
-        if( angley <= 0.f ) angley = (float)M_PI*2.f;
-        if( anglez <= 0.f ) anglez = (float)M_PI*2.f;
-        updateAnimation();
-        break;
-     case 'X':
+     case 's':
         anglex += 0.1f;
         if( anglex >= (float)M_PI*2.f ) anglex = 0.;
         updateAnimation();
         break;
-     case 'x':
+     case 'S':
          anglex -= 0.1f;
         if( anglex <= 0.f ) anglex = (float)M_PI*2.f;
         updateAnimation();
         break;
-    case 'Y':
+    case 'd':
         angley += 0.1f;
         if( angley >= (float)M_PI*2.f ) angley = 0.;
         updateAnimation();
         break;
-     case 'y':
+     case 'D':
          angley -= 0.1f;
         if( angley <= 0.f ) angley = (float)M_PI*2.f;
         updateAnimation();
         break;
-    case 'Z':
+    case 'f':
         anglez += 0.1f;
         if( anglez >= (float)M_PI*2.f ) anglez = 0.;
         updateAnimation();
         break;
-     case 'z':
+    case 'F':
          anglez -= 0.1f;
         if( anglez <= 0.f ) anglez = (float)M_PI*2.f;
         updateAnimation();
         break;
-    case '+':
-        offset += 0.01f;
-        updateAnimation();
-        break;
-    case '-':
-        offset -= 0.01f;
-        updateAnimation();
-        break;
-    case 'M':
+    case 'g':
         anglex += 0.1f;
         angley += 0.1f;
         anglez += 0.1f;
         if( anglex >= (float)M_PI*2.f ) anglex = 0.;
         if( angley >= (float)M_PI*2.f ) angley = 0.;
         if( anglez >= (float)M_PI*2.f ) anglez = 0.;
-        offset += 0.01f;
-        interpolant1 = std::min( interpolant1 + 0.01f, 1.0f);
-        interpolant2 = std::min( interpolant2 + 0.01f, 1.0f);
         updateAnimation();
         break;
-    case 'm':
+    case 'G':
         anglex -= 0.1f;
         angley -= 0.1f;
         anglez -= 0.1f;
         if( anglex <= 0.f ) anglex = (float)M_PI*2.f;
         if( angley <= 0.f ) angley = (float)M_PI*2.f;
         if( anglez <= 0.f ) anglez = (float)M_PI*2.f;
-        offset -= 0.01f;
-        interpolant1 = std::max( interpolant1 - 0.01f, 0.0f);
-        interpolant2 = std::max( interpolant2 - 0.01f, 0.0f);
         updateAnimation();
         break;
+    case 'h':
+        offsetx += 0.01f;
+        updateAnimation();
+        break;
+    case 'H':
+        offsetx -= 0.01f;
+        updateAnimation();
+        break;
+    case 'j':
+        offsety += 0.01f;
+        updateAnimation();
+        break;
+    case 'J':
+        offsety -= 0.01f;
+        updateAnimation();
+        break;
+    case 'k':
+        offsetz += 0.01f;
+        updateAnimation();
+        break;
+    case 'K':
+        offsetz -= 0.01f;
+        updateAnimation();
+        break;
+    case 'm':
+        show_animation = !show_animation;
+        break;
+    case '+':
+        nX += 1.0;
+        nY += 1.0;
+        updateAnimation();
+        displayUnitSphere();
+        break;
+    case '-':
+        nX -= 1.0;
+        nY -= 1.0;
+        updateAnimation();
+        displayUnitSphere();
+        break;
+    case 'x':
+        smooth(0.1f);
+        break;
+    case 'X':
+        smooth(-0.1f);
+        break;
+    case 'c':
+        smoothTaubin(2,0.50f,0.51f);
+        break;
+    case 'v':
+        swell(0.01f);
+        break;
+    case 'V':
+        swell(-0.01f);
+        break;
+    case ',':
+        scale(0, 1.1f);
+        break;
     case '?':
+        scale(0, 0.9f);
+        break;
+    case ';':
+        scale(1, 1.1f);
+        break;
+    case '.':
+        scale(1, 0.9f);
+        break;
+    case ':':
+        scale(2, 1.1f);
+        break;
+    case '/':
+        scale(2, 0.9f);
+        break;
+    case '1':
+        displayUnitCamel();
+        break;
+    case '2':
+        displayUnitSphere();
+        break;
+    case '3':
+        displayUnitCube();
+        break;
+    case '4':
+        displayUnitTorus();
+        break;
+    case '5':
+        displayUnitEmptyCylinder();
+        break;
+    case '6':
+        displayUnitCylinder();
+        break;
+    case '7':
+        displayUnitCone();
+        break;
+    case '8':
+        displayUnitCylinderCone();
+        break;
+    case '9':
+        displayUnitSupershape();
+        break;
     default:
         printUsage ();
         break;
@@ -696,7 +985,7 @@ int main (int argc, char ** argv) {
     glutInit (&argc, argv);
     glutInitDisplayMode (GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
     glutInitWindowSize (SCREENWIDTH, SCREENHEIGHT);
-    window = glutCreateWindow ( "HAI60I - Examen TP");
+    window = glutCreateWindow ( "REVISION");
 
 
     init ();
@@ -709,8 +998,6 @@ int main (int argc, char ** argv) {
     glutReshapeFunc (reshape);
     glutMotionFunc (motion);
     glutMouseFunc (mouse);
-
-    key ('?', 0, 0);
 
     glDepthFunc (GL_LESS);
     glEnable (GL_DEPTH_TEST);
