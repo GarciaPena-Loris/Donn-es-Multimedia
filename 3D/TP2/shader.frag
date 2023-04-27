@@ -39,16 +39,7 @@ void main (void) {
     vec4 Ia = Isa * Ka;
 
     vec4 I = ambientRef * Ia;
-
-    ////////////////////////////////////////////////
-    //Eclairage de Phong à calculer en utilisant -- couleur diffuse et spéculaire
-    ///////////////////////////////////////////////
-    // gl_LightSource[i].position.xyz Position de la lumière i
-    // gl_LightSource[i].diffuse Couleur diffuse de la lumière i
-    // gl_LightSource[i].specular Couleur speculaire de la lumière i
-    // gl_FrontMaterial.diffuse Matériaux diffus de l'objet
-    // gl_FrontMaterial.specular Matériaux speculaire de l'objet
-
+    
     vec4 Kd = gl_FrontMaterial.diffuse;
     vec4 Ks = gl_FrontMaterial.specular;
     

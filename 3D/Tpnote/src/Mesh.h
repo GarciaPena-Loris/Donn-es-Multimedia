@@ -46,25 +46,6 @@ public:
     void recomputeSmoothVertexNormals (unsigned int weight);
     void computeTriangleNormals (std::vector<Vec3> & triangleNormals);
     void collectOneRing (std::vector<std::vector<unsigned int> > & oneRing) const;
-
-    // ############################
-    void smooth( float lambda);
-    void swell(float factor);
-    void scale(int Axe, float factor);
-    void smoothTaubin(float lambda, float mu, int iterations);
-    void addNoise();
-    // ############################
-
-    void setUnitSphere(int nX, int nY);
-    void setUnitCube(int nX, int nY);
-    void setUnitTorus(float R, float r, int nX, int nY);
-    void setUnitEmptyCylinder(float R, float r, int nX, int nY);
-    void setUnitCylinder(float R, float r, int nX, int nY);
-    void setUnitCone(float radius, float height, int nX, int nY);
-    void setUnitCylinderCone(float radius, float height, int nX, int nY);
-    void setUnitSupershape(int nX, int nY, float a, float b, float m, float n1, float n2, float n3);
-    void setUnitDodecahedron(int nX, int nY);
-    
 private:
     std::vector<Vertex> vertices;
     std::vector<Triangle> triangles;

@@ -115,10 +115,10 @@ void Mesh::smooth( float lambda ){
     vector<Vec3> new_positions;
     new_positions.resize(vertices.size());
 
-    for (int i = 0; i < vertices.size(); ++i) {
+    for (unsigned int i = 0; i < vertices.size(); ++i) {
         new_positions[i] = Vec3(0, 0, 0);
 
-        for (int j = 0; j < ring[i].size(); ++j) {
+        for (unsigned int j = 0; j < ring[i].size(); ++j) {
             new_positions[i] += vertices[ring[i][j]].position;
         }
 
@@ -126,7 +126,7 @@ void Mesh::smooth( float lambda ){
         new_positions[i] -= vertices[i].position;
     }
 
-    for (int i = 0; i < vertices.size(); ++i) {
+    for (unsigned int i = 0; i < vertices.size(); ++i) {
         vertices[i].position += lambda * new_positions[i];
     }
 }
@@ -137,7 +137,7 @@ void Mesh::swell(float factor) {
     unsigned int normal;
     recomputeSmoothVertexNormals(normal);
 
-    for (int i = 0; i < vertices.size(); ++i) {
+    for (unsigned int i = 0; i < vertices.size(); ++i) {
         // Ajoute la normale multipliée par le facteur à la position du sommet
         vertices[i].position += factor * vertices[i].normal;
     }
@@ -155,6 +155,19 @@ void Mesh::smoothTaubin(float lambda, float mu, int iterations)
     for(int i = 0; i < iterations; ++i) {
         smooth(lambda);
         smooth(-mu);
+    }
+}
+
+void Mesh::addNoise(){
+    for( unsigned int i = 0 ; i < vertices.size() ; i ++ )
+    {
+        float factor = 0.03;
+        const Vec3 & p = vertices[i].position;
+        const Vec3 & n = vertices[i].normal;
+        vertices[i].position = Vec3( p[0] + factor*((double)(rand()) / (double)(RAND_MAX))*n[0],
+                p[1] + factor*((double)(rand()) / (double)(RAND_MAX))*n[1],
+                p[2] + factor*((double)(rand()) / (double)(RAND_MAX))*n[2]);
+
     }
 }
 
@@ -485,15 +498,15 @@ void Mesh::setUnitCylinderCone(float radius, float height, int nX, int nY)
     Mesh cone;
     cone.setUnitCone(radius, height, nX, nY);
 
-    // Translate àa la fin du cylinder
+    // Translate à la fin du cylinder
     for (unsigned int i = 0; i < cone.vertices.size(); i++)
     {
-        float posx = cone.vertices[i].getPosition()[2];
-        posx -= height/2;
+        float posz = cone.vertices[i].getPosition()[2];
+        posz -= height/2;
         Vec3 pos = Vec3(
             cone.vertices[i].getPosition()[0],
             cone.vertices[i].getPosition()[1],
-            posx);
+            posz);
         cone.vertices[i].setPosition(pos);
     }
 
@@ -563,3 +576,44 @@ void Mesh::setUnitSupershape(int nX, int nY, float a, float b, float m, float n1
     // Normales
     recomputeSmoothVertexNormals(1);
 }
+
+void Mesh::setUnitDodecahedron(int nX, int nY)
+{
+    vertices.clear();
+    triangles.clear();
+
+    vertices.clear();
+    triangles.clear();
+
+    float phi = (1 + sqrt(5)) / 2; // nombre d'or
+
+    // Vertices
+    vertices.push_back(Vec3(-1, -1, -1));
+    vertices.push_back(Vec3(-1, -1, 1));
+    vertices.push_back(Vec3(-1, 1, -1));
+    vertices.push_back(Vec3(-1, 1, 1));
+    vertices.push_back(Vec3(1, -1, -1));
+    vertices.push_back(Vec3(1, -1, 1));
+    vertices.push_back(Vec3(1, 1, -1));
+    vertices.push_back(Vec3(1, 1, 1));
+    vertices.push_back(Vec3(0, -1 / phi, -phi));
+    vertices.push_back(Vec3(0, -1 / phi, phi));
+    vertices.push_back(Vec3(0, 1 / phi, -phi));
+    vertices.push_back(Vec3(0, 1 / phi, phi));
+    vertices.push_back(Vec3(-phi, 0, -1 / phi));
+    vertices.push_back(Vec3(-phi, 0, 1 / phi));
+    vertices.push_back(Vec3(phi, 0, -1 / phi));
+    vertices.push_back(Vec3(phi, 0, 1 / phi));
+    vertices.push_back(Vec3(-1 / phi, -phi, 0));
+    vertices.push_back(Vec3(-1 / phi, phi, 0));
+    vertices.push_back(Vec3(1 / phi, -phi, 0));
+    vertices.push_back(Vec3(1 / phi, phi, 0));
+
+    // Triangles
+    
+    
+    // Normales
+    recomputeSmoothVertexNormals(1);
+}
+
+

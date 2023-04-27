@@ -1,25 +1,3 @@
-// --------------------------------------------------------------------------
-// gMini,
-// a minimal Glut/OpenGL app to extend
-//
-// Copyright(C) 2007-2009
-// Tamy Boubekeur
-//
-// All rights reserved.
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-// for more details.
-//
-// --------------------------------------------------------------------------
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -66,9 +44,14 @@ public:
         glUniform1fARB(shininessLocation, s);
     }
 
-    void setLevels(int l)
+    void setLevels(float s)
     {
-        glUniform1iARB(levelsLocation, l);
+        glUniform1fARB(levelsLocation, s);
+    }
+
+    void setFog(float s)
+    {
+        glUniform1fARB(fogLocation, s);
     }
 
 private:
@@ -82,12 +65,14 @@ private:
         specularRefLocation = getUniLoc("specularRef");
         shininessLocation = getUniLoc("shininess");
         levelsLocation = getUniLoc("levels");
+        fogLocation = getUniLoc("fog");
     }
     GLint ambientRefLocation;
     GLint diffuseRefLocation;
     GLint specularRefLocation;
     GLint shininessLocation;
     GLint levelsLocation;
+    GLint fogLocation;
 };
 
 static GLint window;
@@ -109,10 +94,12 @@ static Mesh mesh_pose_1;
 static Mesh mesh_pose_2;
 static GLuint glID;
 
-static int levels = 4;
 static float ambientRef = 0.2f;
 static float diffuseRef = 0.8f;
 static float specularRef = 0.5f;
+static float levels = 3.0f;
+static float fog = 0.0f;
+
 static float shininess = 16.0f;
 static float interpolant0 = 1.f;
 static float interpolant1 = 0.f;
@@ -124,6 +111,7 @@ static float offsetx = 0.f;
 static float offsety = 0.f;
 static float offsetz = 0.f;
 bool show_animation = false;
+bool show_light_animation = false;
 bool increment1 = true;
 bool increment2 = true;
 
@@ -140,17 +128,20 @@ float n1 = 1;
 float n2 = 1;
 float n3 = 1;
 
-bool display_camel;
-bool display_sphere;
-bool display_cube;
-bool display_torus;
-bool display_emptycylinder;
-bool display_cylinder;
-bool display_cone;
-bool display_cylindercone;
-bool display_supershape;
+bool display_camel = true;
+bool display_sphere = false;
+bool display_cube = false;
+bool display_torus= false;
+bool display_emptycylinder= false;
+bool display_cylinder = false;
+bool display_cone = false;
+bool display_cylindercone = false;
+bool display_supershape = false;
+bool display_dodecahedron = false;
 
 int compteurAnimation = 0;
+float compteurLumiere = 0;
+float compteurLumiereDessous = 360;
 
 typedef enum
 {
@@ -254,12 +245,9 @@ void updateAnimation()
 
     // (2)
     // Affecter le résultat aux positions de current_mesh
-    if (display_camel)
+    for (unsigned int i = 0; i < V.size(); i++)
     {
-        for (unsigned int i = 0; i < V.size(); i++)
-        {
-            V[i].setPosition(((1 - w1) * V0[i].getPosition() + w1 * V1[i].getPosition() + (1 - w2) * V0[i].getPosition() + w2 * V2[i].getPosition()) / 2);
-        }
+        V[i].setPosition(((1 - w1) * V0[i].getPosition() + w1 * V1[i].getPosition() + (1 - w2) * V0[i].getPosition() + w2 * V2[i].getPosition()) / 2);
     }
 
     // Ajouter des transformation
@@ -325,6 +313,79 @@ void updateAnimation()
     initGLList();
 }
 
+void rotateAnimation(float anglex, float angley, float anglez) {
+    // Récupérer la position des sommets du maillage courant à mettre à jour
+    vector<Vertex> &V = current_mesh.getVertices();
+
+    Mat3 Rx, Ry, Rz;
+
+    // Mettre a jour Rx pour avoir une rotation atour de l'axe x de angle
+    //  A completer
+    Rx(0, 0) = 1;
+    Rx(0, 1) = 0;
+    Rx(0, 2) = 0;
+    Rx(1, 0) = 0;
+    Rx(1, 1) = cos(anglex);
+    Rx(1, 2) = -sin(anglex);
+    Rx(2, 0) = 0;
+    Rx(2, 1) = sin(anglex);
+    Rx(2, 2) = cos(anglex);
+
+    // Mettre a jour Ry pour avoir une rotation atour de l'axe y de angle
+    Ry(0, 0) = cos(angley);
+    Ry(0, 1) = 0;
+    Ry(0, 2) = sin(angley);
+    Ry(1, 0) = 0;
+    Ry(1, 1) = 1;
+    Ry(1, 2) = 0;
+    Ry(2, 0) = -sin(angley);
+    Ry(2, 1) = 0;
+    Ry(2, 2) = cos(angley);
+
+    // Mettre a jour Rz pour avoir une rotation atour de l'axe z de angle
+    Rz(0, 0) = cos(anglez);
+    Rz(0, 1) = -sin(anglez);
+    Rz(0, 2) = 0;
+    Rz(1, 0) = sin(anglez);
+    Rz(1, 1) = cos(anglez);
+    Rz(1, 2) = 0;
+    Rz(2, 0) = 0;
+    Rz(2, 1) = 0;
+    Rz(2, 2) = 1;
+
+    // Matrice rotation appliquer au resulat
+    // tester votre matrices en utilisant la matrice model
+    Mat3 rotation = Rx * Ry * Rz;
+
+    for (unsigned int i = 0; i < V.size(); i++)
+    {
+        V[i].setPosition(rotation * V[i].getPosition());
+    }
+
+    // Recalcule des normales et mise à jour de l'affichage
+    current_mesh.recomputeSmoothVertexNormals(0);
+    initGLList();
+}
+
+void translateAnimation(float x, float y, float z) {
+     // Récupérer la position des sommets du maillage courant à mettre à jour
+    vector<Vertex> &V = current_mesh.getVertices();
+
+     // Translation a mettre a jour en utilisant la variable offset
+    // Définir un vecteur de translation en utilisant la matrice offset
+    Vec3 translation(x, y, z);
+
+    // Appliquer la translation à chaque sommet
+    for (unsigned int i = 0; i < V.size(); i++)
+    {
+        V[i].setPosition(V[i].getPosition() + translation);
+    }
+
+    // Recalcule des normales et mise à jour de l'affichage
+    current_mesh.recomputeSmoothVertexNormals(0);
+    initGLList();
+}
+
 // ########################################
 // ########################################
 // ########################################
@@ -365,10 +426,38 @@ void scale(int Axe, float factor)
     initGLList();
 }
 
+void addNoise(){
+    current_mesh.addNoise();
+
+    //Recalcule des normales et mise à jour de l'affichage
+    current_mesh.recomputeSmoothVertexNormals(0);
+    initGLList ();
+}
+
+void moveLights() {
+    // On récupère la position de la caméra
+    float cam_pos_x, cam_pos_y, cam_pos_z;
+    camera.getPosition(cam_pos_x, cam_pos_y, cam_pos_z);
+
+    GLfloat light_position_0[4] = {42, 374, 161, 0};
+    GLfloat light_position_1[4] = {473, -351, -259, 0};
+    // On l'applique notre nouvelle position et on commente l'ancienne
+    GLfloat light_position_2[4] = {cam_pos_x, cam_pos_y, cam_pos_z, 0};
+
+
+    GLfloat ambient[4] = {0.4f, 0.4f, 0.4f, 1.f};
+
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position_0);
+
+    glLightfv(GL_LIGHT1, GL_POSITION, light_position_1);
+
+    glLightfv(GL_LIGHT2, GL_POSITION, light_position_2);
+}
+
 // ########################################
 // ########################################
 
-void animation()
+void animationCamel()
 {
     if (increment1)
     {
@@ -449,8 +538,67 @@ void animation()
     if (interpolant2 >= 0.6 && interpolant2 <= 1)
         glClearColor(1.0, 0.0, 1.0, 1.0);
 
-    updateAnimation();
     compteurAnimation = (compteurAnimation + 1) % 500;
+    updateAnimation();
+}
+
+void animation() {
+    if ((compteurAnimation >= 0 && compteurAnimation <= 200) || (compteurAnimation >= 300 && compteurAnimation <= 500))
+    {
+        rotateAnimation(0.1, 0.1, 0.1);
+    }
+
+    if (compteurAnimation <= 5)
+    {
+        translateAnimation(0.1, 0.1, 0.);
+    }
+    else if (compteurAnimation >= 100 && compteurAnimation <= 105)
+    {
+        translateAnimation(-0.3, 0., 0.);
+    }
+    else if (compteurAnimation >= 200 && compteurAnimation <= 205)
+    {
+        translateAnimation(0., -0.2, 0.);
+    }
+    else if (compteurAnimation >= 300 && compteurAnimation <= 305)
+    {
+        translateAnimation(0.3, 0., 0.);
+    }
+    else if (compteurAnimation >= 400 && compteurAnimation <= 405)
+    {
+        translateAnimation(-0.1, 0.1, 0.);
+    }
+
+    if (compteurAnimation >= 0 && compteurAnimation <= 100)
+        glClearColor(1.0, 0.0, 0.0, 1.0);
+    if (compteurAnimation >= 100 && compteurAnimation <= 200)
+        glClearColor(0.0, 1.0, 0.0, 1.0);
+    if (compteurAnimation >= 200 && compteurAnimation <= 300)
+        glClearColor(0.0, 0.0, 1.0, 1.0);
+    if (compteurAnimation >= 300 && compteurAnimation <= 400)
+        glClearColor(1.0, 1.0, 0.0, 1.0);
+    if (compteurAnimation >= 400 && compteurAnimation <= 500)
+        glClearColor(0.0, 1.0, 1.0, 1.0);
+
+    compteurAnimation = (compteurAnimation + 1) % 500;
+}
+
+void moveLight() { //Presque
+    if (compteurLumiere == 360) {
+        compteurLumiereDessous = compteurLumiereDessous - 3;
+        if (compteurLumiereDessous == -360) {
+            compteurLumiere = -360;
+            compteurLumiereDessous = 360;
+        }
+    } 
+    else {
+        compteurLumiere = compteurLumiere + 3;  
+    }
+
+    GLfloat light_position_0[4] = {compteurLumiere, compteurLumiereDessous, 0, 1};
+
+    
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position_0);
 }
 
 // ########################################
@@ -467,33 +615,16 @@ void clearBoolMesh()
     display_cone = false;
     display_cylindercone = false;
     display_supershape = false;
+    display_dodecahedron = false;
 }
 
-void displayActualMesh()
-{
-    if (display_camel)
-        displayUnitCamel();
-    else if (display_sphere)
-        displayUnitSphere();
-    else if (display_cube)
-        displayUnitCube();
-    else if (display_torus)
-        displayUnitTorus();
-    else if (display_emptycylinder)
-        displayUnitEmptyCylinder();
-    else if (display_cylinder)
-        displayUnitCylinder();
-    else if (display_cone)
-        displayUnitCone();
-    else if (display_cylindercone)
-        displayUnitCylinderCone();
-    else if (display_supershape)
-        displayUnitSupershape();
-}
 
 void displayUnitCamel()
 {
     openOFF(std::string("./data/camel.off"), current_mesh, 0);
+    GLfloat material_color[4] = {1.0, 1.0, 1., 1.0f};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+
     initGLList();
 }
 
@@ -562,8 +693,42 @@ void displayUnitSupershape()
     initGLList();
 }
 
+void displayUnitDodecahedron()
+{
+    GLfloat material_color[4] = {1.0, 0.5, 0.5, 1.0f};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_color);
+    current_mesh.setUnitDodecahedron(nX, nY);
+    initGLList();
+}
+
 // ########################################
 // ########################################
+
+
+void displayActualMesh()
+{
+    if (display_camel)
+        displayUnitCamel();
+    else if (display_sphere)
+        displayUnitSphere();
+    else if (display_cube)
+        displayUnitCube();
+    else if (display_torus)
+        displayUnitTorus();
+    else if (display_emptycylinder)
+        displayUnitEmptyCylinder();
+    else if (display_cylinder)
+        displayUnitCylinder();
+    else if (display_cone)
+        displayUnitCone();
+    else if (display_cylindercone)
+        displayUnitCylinderCone();
+    else if (display_supershape)
+        displayUnitSupershape();
+    else if (display_dodecahedron)
+        displayUnitDodecahedron();
+}
+
 // ########################################
 // ########################################
 
@@ -574,6 +739,7 @@ void setShaderValues()
     phongShader->setSpecularRef(specularRef);
     phongShader->setShininess(shininess);
     phongShader->setLevels(levels);
+    phongShader->setFog(fog);
 }
 
 void drawMesh(bool flat)
@@ -638,13 +804,13 @@ void initLights()
 
     GLfloat direction_0[3] = {-42, -374, -161};
     GLfloat direction_1[3] = {-473, 351, 259};
-    GLfloat direction_2[3] = {438, -167, 48};
+    GLfloat direction_2[3] = {438, -167, 48}; 
 
     GLfloat diffuse_color_0[4] = {1.0, 1.0, 1.0, 1};
     GLfloat diffuse_color_1[4] = {0.28, 0.39, 1.0, 1};
     GLfloat diffuse_color_2[4] = {1.0, 0.69, 0.23, 1};
 
-    GLfloat specular_color_0[4] = {0.5, 0.0, 0.0, 1};
+    GLfloat specular_color_0[4] = {0.8, 0.0, 0.0, 1};
     GLfloat specular_color_1[4] = {0.0, 0.8, 0.0, 1};
     GLfloat specular_color_2[4] = {0.0, 0.0, 0.8, 1};
 
@@ -728,6 +894,7 @@ void init()
     initLights();
     setSunriseLight();
     setDefaultMaterial();
+    //openOFF(std::string("./data/monkey.off"), current_mesh, 0);
     openOFF(std::string("./data/camel.off"), current_mesh, 0);
     openOFF(std::string("./data/camel.off"), mesh_pose_0, 0);
     openOFF(std::string("./data/camel_pose_1.off"), mesh_pose_1, 0);
@@ -796,7 +963,15 @@ void idle()
     }
     if (nbBoucle == 0 && show_animation)
     {
-        animation();
+        if (display_camel) {
+            animationCamel();
+        }
+        else {
+            animation();
+        }
+    }
+    if (nbBoucle == 0 && show_light_animation) {
+        moveLight();
     }
 
     glutPostRedisplay();
@@ -810,12 +985,15 @@ void printUsage()
          << "--------------------------------------" << endl
          << " w: Toggle wireframe Mode" << endl
          << " *: Toggle full screen mode" << endl
+         << " =: Aligne la lumiere avec la cam" << endl
          << " a/A : Augmente/Diminue ambiantRef" << endl
          << " z/Z : Augmente/Diminue diffuseRef" << endl
          << " e/E : Augmente/Diminue SpecularRef" << endl
-         << " t/T : Augmente/Diminue le poids du modele 0 pour l’interpolation" << endl
-         << " y/Y : Augmente/Diminue le poids du modele 1 pour l’interpolation" << endl
-         << " u/U : Augmente/Diminue le poids du modele 2 pour l’interpolation" << endl
+         << " r/R : Augmente/Diminue Levels" << endl
+         << " t/T : Augmente/Diminue Fog" << endl
+         << " i/I : Augmente/Diminue le poids du modele 0 pour l’interpolation" << endl
+         << " o/O : Augmente/Diminue le poids du modele 1 pour l’interpolation" << endl
+         << " p/P : Augmente/Diminue le poids du modele 2 pour l’interpolation" << endl
          << " s/S : Rotation sur x" << endl
          << " d/D : Rotation sur y" << endl
          << " f/F : Rotation sur z" << endl
@@ -823,6 +1001,8 @@ void printUsage()
          << " h/H : Translate +/- sur x" << endl
          << " j/J : Translate +/- sur y" << endl
          << " k/K : Translate +/- sur z" << endl
+         << " l : Active mouvement des lumière" << endl
+         << " m : Make it dance !" << endl
          << " +/- : Augmente/Diminue l’offset, nX et nY" << endl
          << " x/X : Augmente/Diminue smooth" << endl
          << " c : Fait smooth Taubin" << endl
@@ -830,7 +1010,13 @@ void printUsage()
          << " ','/'?' : Augmente/Diminue l'epaisseur sur x" << endl
          << " ';'/'.' : Augmente/Diminue l'epaisseur sur y" << endl
          << " ':'/'/' : Augmente/Diminue l'epaisseur sur z" << endl
+         << " '!' : Ajoute du bruit" << endl
+         << " '^' : Augmente la valeur R du torus" << endl
+         << " '$' : Augmente la valeur r du torus" << endl
+         << " '%' : Augmente la valeur radius" << endl
+         << " '*' : Augmente la valeur height" << endl
          << " q, <esc>: Quit" << endl
+         << " supp: Affiche l'aide des touches" << endl
          << endl
          << "--------------------------------------" << endl;
 }
@@ -839,7 +1025,7 @@ void key(unsigned char keyPressed, int x, int y)
 {
     switch (keyPressed)
     {
-    case '*':
+    case '<':
         if (fullScreen == true)
         {
             glutReshapeWindow(SCREENWIDTH, SCREENHEIGHT);
@@ -870,6 +1056,10 @@ void key(unsigned char keyPressed, int x, int y)
             mode = Wire;
         }
         break;
+    case '=':
+        moveLights();
+        break;
+    // Phong
     case 'a':
         ambientRef = ambientRef + 0.1f;
         break;
@@ -888,27 +1078,40 @@ void key(unsigned char keyPressed, int x, int y)
     case 'E':
         specularRef = specularRef - 0.1f;
         break;
+    case 'r':
+        levels += 1.0f;
+        break;
+    case 'R':
+        levels = std::max(0.f, levels - 1.0f);
+        break;
     case 't':
+        fog += 0.1f;
+        break;
+    case 'T':
+        fog = std::max(0.f, fog - 0.1f);
+        break;
+    // Mouvements
+    case 'i':
         interpolant0 = std::min(interpolant0 + 0.01f, 1.0f);
         updateAnimation();
         break;
-    case 'T':
+    case 'I':
         interpolant0 = std::max(interpolant0 - 0.01f, 0.0f);
         updateAnimation();
         break;
-    case 'y':
+    case 'o':
         interpolant1 = std::min(interpolant1 + 0.01f, 1.0f);
         updateAnimation();
         break;
-    case 'Y':
+    case 'O':
         interpolant1 = std::max(interpolant1 - 0.01f, 0.0f);
         updateAnimation();
         break;
-    case 'u':
+    case 'p':
         interpolant2 = std::min(interpolant2 + 0.01f, 1.0f);
         updateAnimation();
         break;
-    case 'U':
+    case 'P':
         interpolant2 = std::max(interpolant2 - 0.01f, 0.0f);
         updateAnimation();
         break;
@@ -916,37 +1119,37 @@ void key(unsigned char keyPressed, int x, int y)
         anglex += 0.1f;
         if (anglex >= (float)M_PI * 2.f)
             anglex = 0.;
-        updateAnimation();
+        rotateAnimation(0.1, 0., 0.);
         break;
     case 'S':
         anglex -= 0.1f;
         if (anglex <= 0.f)
             anglex = (float)M_PI * 2.f;
-        updateAnimation();
+        rotateAnimation(-0.1, 0., 0.);
         break;
     case 'd':
         angley += 0.1f;
         if (angley >= (float)M_PI * 2.f)
             angley = 0.;
-        updateAnimation();
+        rotateAnimation(0., 0.1, 0.);
         break;
     case 'D':
         angley -= 0.1f;
         if (angley <= 0.f)
             angley = (float)M_PI * 2.f;
-        updateAnimation();
+        rotateAnimation(0., -0.1 ,0.);
         break;
     case 'f':
         anglez += 0.1f;
         if (anglez >= (float)M_PI * 2.f)
             anglez = 0.;
-        updateAnimation();
+        rotateAnimation(0., 0., 0.1);
         break;
     case 'F':
         anglez -= 0.1f;
         if (anglez <= 0.f)
             anglez = (float)M_PI * 2.f;
-        updateAnimation();
+        rotateAnimation(0., 0., -0.1);
         break;
     case 'g':
         anglex += 0.1f;
@@ -958,7 +1161,7 @@ void key(unsigned char keyPressed, int x, int y)
             angley = 0.;
         if (anglez >= (float)M_PI * 2.f)
             anglez = 0.;
-        updateAnimation();
+        rotateAnimation(0.1, 0.1, 0.1);
         break;
     case 'G':
         anglex -= 0.1f;
@@ -970,31 +1173,28 @@ void key(unsigned char keyPressed, int x, int y)
             angley = (float)M_PI * 2.f;
         if (anglez <= 0.f)
             anglez = (float)M_PI * 2.f;
-        updateAnimation();
+        rotateAnimation(-0.1, -0.1, -0.1);
         break;
     case 'h':
-        offsetx += 0.01f;
-        updateAnimation();
+        translateAnimation(0.01, 0., 0.);
         break;
     case 'H':
-        offsetx -= 0.01f;
-        updateAnimation();
+        translateAnimation(-0.01, 0., 0.);
         break;
     case 'j':
-        offsety += 0.01f;
-        updateAnimation();
+        translateAnimation(0., 0.01, 0.);
         break;
     case 'J':
-        offsety -= 0.01f;
-        updateAnimation();
+        translateAnimation(0., -0.01, 0.);
         break;
     case 'k':
-        offsetz += 0.01f;
-        updateAnimation();
+        translateAnimation(0., 0., 0.01);
         break;
     case 'K':
-        offsetz -= 0.01f;
-        updateAnimation();
+        translateAnimation(0., 0., -0.01);
+        break;
+    case 'l':
+        show_light_animation = !show_light_animation;
         break;
     case 'm':
         show_animation = !show_animation;
@@ -1002,14 +1202,12 @@ void key(unsigned char keyPressed, int x, int y)
     case '+':
         nX += 1.0;
         nY += 1.0;
-        updateAnimation();
-        displayUnitSphere();
+        displayActualMesh();
         break;
     case '-':
         nX -= 1.0;
         nY -= 1.0;
-        updateAnimation();
-        displayUnitSphere();
+        displayActualMesh();
         break;
     case 'x':
         smooth(0.1f);
@@ -1043,6 +1241,9 @@ void key(unsigned char keyPressed, int x, int y)
         break;
     case '/':
         scale(2, 0.9f);
+        break;
+    case '!':
+        addNoise();
         break;
     case '1':
         clearBoolMesh();
@@ -1087,6 +1288,27 @@ void key(unsigned char keyPressed, int x, int y)
     case '9':
         clearBoolMesh();
         display_supershape = true;
+        displayActualMesh();
+        break;
+    case '0':
+        clearBoolMesh();
+        display_dodecahedron = true;
+        displayActualMesh();
+        break;
+    case '^':
+        R += 0.1;
+        displayActualMesh();
+        break;
+    case '$':
+        r += 0.1;
+        displayActualMesh();
+        break;
+    case '%':
+        radius += 0.1;
+        displayActualMesh();
+        break;
+    case '*':
+        height += 0.1;
         displayActualMesh();
         break;
     default:
